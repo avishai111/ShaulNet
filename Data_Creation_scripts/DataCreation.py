@@ -33,7 +33,7 @@ def filter_and_clean_transcripts(metadata: pd.DataFrame, audio_base_path: str) -
     word_counts = raw_transcript["transcript_in_english"].str.split().apply(len)
     too_few_words_mask = word_counts < 1
     durations = raw_transcript["file_id"].apply(lambda fid: get_duration_in_seconds(f"{audio_base_path}/{fid}.wav"))
-    too_long_audio_mask = durations > 30
+    too_long_audio_mask = durations > 25
 
     bad_mask = too_few_words_mask | too_long_audio_mask
     notgood = raw_transcript.loc[bad_mask, "file_id"].tolist()
@@ -103,14 +103,14 @@ if __name__ == "__main__":
         "train": {
             "metadata_path": "/gpfs0/bgu-benshimo/users/wavishay/projects/roboshual/saspeech_automatic_data/metadata.csv",
             "input_path": "/gpfs0/bgu-benshimo/users/wavishay/projects/roboshual/saspeech_automatic_data/wavs/",
-            "output_path": "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/tacotron2/data/saspeech_automatic_data/wavs/",
-            "file_name_output": "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/tacotron2/train_list.txt"
+            "output_path": "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/data/saspeech_automatic_data/wavs/",
+            "file_name_output": "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/train_list.txt"
         },
         "dev": {
             "metadata_path": "/gpfs0/bgu-benshimo/users/wavishay/projects/roboshual/saspeech_gold_standard/metadata_full.csv",
             "input_path": "/gpfs0/bgu-benshimo/users/wavishay/projects/roboshual/saspeech_gold_standard/wavs/",
-            "output_path": "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/tacotron2/data/saspeech_gold_standard/wavs/",
-            "file_name_output": "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/tacotron2/dev_list.txt"
+            "output_path": "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/data/saspeech_gold_standard/wavs/",
+            "file_name_output": "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/dev_list.txt"
         }
     }
 
@@ -120,12 +120,12 @@ if __name__ == "__main__":
         metadata["transcript_in_english"] = metadata["transcript"].apply(HebrewToEnglish)
         raw_transcript, notgood = filter_and_clean_transcripts(metadata, input_path)
 
-        processed_transcripts = process_audio_files(
-            input_path=input_path,
-            output_path=output_path,
-            raw_transcript=raw_transcript,
-            notgood=notgood
-        )
+        # processed_transcripts = process_audio_files(
+        #     input_path=input_path,
+        #     output_path=output_path,
+        #     raw_transcript=raw_transcript,
+        #     notgood=notgood
+        # )
 
         mel_output_path = output_path.replace("wavs", "mel_spectrograms")
         write_transcript_file_mels(raw_transcript, file_name_output, mel_output_path)

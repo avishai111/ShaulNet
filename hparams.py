@@ -18,8 +18,8 @@ class HParams:
 
     # Data Parameters
     load_mel_from_disk: bool = True
-    training_files: str = '/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/tacotron2/train_with_80percent_dev_weighted.txt'
-    validation_files: str = '/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/tacotron2/dev_20percent_list_weighted.txt'
+    training_files: str = '/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/train_with_80percent_dev_weighted.txt'
+    validation_files: str = '/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/dev_with_20percent_weighted.txt'
     text_cleaners: list = ('basic_cleaners',)
 
     # Audio Parameters

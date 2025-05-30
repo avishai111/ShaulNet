@@ -2,6 +2,7 @@ import os
 import time
 import argparse
 import math
+import numpy as np
 from numpy import finfo
 
 import torch
@@ -259,11 +260,11 @@ def train(output_directory, log_directory, checkpoint_path, warm_start, n_gpus,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-o', '--output_directory', type=str, default='/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/tacotron2/output_dir_full_training_weighted/',
+    parser.add_argument('-o', '--output_directory', type=str, default='/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/output_dir_full_training_weighted/',
                         help='directory to save checkpoints')
-    parser.add_argument('-l', '--log_directory', type=str, default='/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/tacotron2/output_dir_full_training_weighted/logs',
+    parser.add_argument('-l', '--log_directory', type=str, default='/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/output_dir_full_training_weighted/logs',
                         help='directory to save tensorboard logs')
-    parser.add_argument('-c', '--checkpoint_path', type=str, default='/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/tacotron2/pretrained/tacotron2_model.pth',
+    parser.add_argument('-c', '--checkpoint_path', type=str, default='/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/pretrained/tacotron2_model.pth',
                         required=False, help='checkpoint path')
     parser.add_argument('--warm_start', action='store_true', default=True,
                         help='load model weights only, ignore specified layers')

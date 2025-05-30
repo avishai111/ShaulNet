@@ -8,13 +8,13 @@ import torch
 # File Paths
 # -----------------------------
 # Existing file lists
-train_list_path = "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/tacotron2/filelists/train_list30.txt"
-dev_list_path = "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/tacotron2/filelists/dev_list_mels.txt"
-dev_20_path = "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/tacotron2/filelists/dev_20dev_list.txt"
+train_list_path = "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/train_list30.txt"
+dev_list_path = "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/dev_list30.txt"
+dev_20_path = "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/dev_20dev_list.txt"
 
 # Output file lists
-weighted_train_path = "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/tacotron2/train_with_80percent_dev_weighted.txt"
-new_dev_path = "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/tacotron2/dev_20percent_list_weighted.txt"
+weighted_train_path = "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/train_with_80percent_dev_weighted.txt"
+new_dev_path = "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/dev_with_20percent_weighted.txt"
 
 # -----------------------------
 # Load Function
@@ -56,8 +56,10 @@ total = num_train + num_dev
 train_weight = total / num_train
 dev_weight = total / num_dev
 
-train_df["weight"] = train_weight
-remaining_dev_df["weight"] = dev_weight
+scaling_factor = len(train_df) / len(remaining_dev_df)
+
+train_df["weight"] = 1.0
+remaining_dev_df["weight"] = scaling_factor
 
 weighted_train_df = pd.concat([train_df, remaining_dev_df]).reset_index(drop=True)
 
