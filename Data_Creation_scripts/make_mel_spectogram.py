@@ -2,6 +2,10 @@ import os
 import torch
 import numpy as np
 from tqdm import tqdm
+import sys
+
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, parent_dir)
 
 from layers import TacotronSTFT  # Ensure this import works in your environment
 from utils import load_wav_to_torch  # Ensure this import works in your environment
@@ -13,7 +17,8 @@ from hparams import create_hparams  # Adjust if you import this differently
 def make_mel_spectrograms(input_folder: str, output_folder: str) -> None:
     """
     Generates mel spectrograms using TacotronSTFT and saves them as .npy files.
-    
+    Utilizes GPU if available.
+
     Args:
         input_folder (str): Directory containing .wav files.
         output_folder (str): Directory to save .npy mel spectrograms.
@@ -22,6 +27,11 @@ def make_mel_spectrograms(input_folder: str, output_folder: str) -> None:
     hparams = create_hparams()
     os.makedirs(output_folder, exist_ok=True)
 
+    # זיהוי מכשיר
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"🚀 Using device: {device}")
+
+    # יצירת STFT על ה-device הנבחר
     stft = TacotronSTFT(
         filter_length=hparams.filter_length,
         hop_length=hparams.hop_length,
@@ -30,7 +40,7 @@ def make_mel_spectrograms(input_folder: str, output_folder: str) -> None:
         sampling_rate=hparams.sampling_rate,
         mel_fmin=hparams.mel_fmin,
         mel_fmax=hparams.mel_fmax
-    )
+    ).to(device)
 
     for filename in tqdm(os.listdir(input_folder), desc="🔊 Processing WAVs"):
         if not filename.endswith(".wav"):
@@ -44,7 +54,7 @@ def make_mel_spectrograms(input_folder: str, output_folder: str) -> None:
                 raise ValueError(f"{filename}: Expected {stft.sampling_rate}, got {sampling_rate}")
 
             audio_norm = audio / hparams.max_wav_value
-            audio_norm = audio_norm.unsqueeze(0)
+            audio_norm = audio_norm.unsqueeze(0).to(device)
 
             with torch.no_grad():
                 melspec = stft.mel_spectrogram(audio_norm)
@@ -65,12 +75,12 @@ def make_mel_spectrograms(input_folder: str, output_folder: str) -> None:
 if __name__ == "__main__":
     data_sets = [
         {
-            "input": "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/tacotron2/data/saspeech_automatic_data/wavs/",
-            "output": "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/tacotron2/data/saspeech_automatic_data/mel_spectrograms/"
+            "input": "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/data/trimm/saspeech_automatic_data/wavs",
+            "output": "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/data/trimm/saspeech_automatic_data/mel_spectrograms/"
         },
         {
-            "input": "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/tacotron2/data/saspeech_gold_standard/wavs/",
-            "output": "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/tacotron2/data/saspeech_gold_standard/mel_spectrograms/"
+            "input": "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/data/trimm/saspeech_gold_standard/wavs",
+            "output": "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/data/trimm/saspeech_gold_standard/mel_spectrograms/"
         }
     ]
 

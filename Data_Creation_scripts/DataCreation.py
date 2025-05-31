@@ -9,6 +9,10 @@ import librosa
 import soundfile as sf
 from tqdm import tqdm
 from typing import Tuple, List, Set
+import sys
+
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, parent_dir)
 
 # Hebrew-related libraries
 from hebrew import Hebrew
@@ -16,6 +20,8 @@ from hebrew.chars import HebrewChar, ALEPH
 from hebrew import GematriaTypes
 from HebrewToEnglish import HebrewToEnglish
 
+
+MAX_DURATION = 15  # Maximum duration in seconds for audio files
 # ============================
 # Audio Utility
 # ============================
@@ -33,7 +39,7 @@ def filter_and_clean_transcripts(metadata: pd.DataFrame, audio_base_path: str) -
     word_counts = raw_transcript["transcript_in_english"].str.split().apply(len)
     too_few_words_mask = word_counts < 1
     durations = raw_transcript["file_id"].apply(lambda fid: get_duration_in_seconds(f"{audio_base_path}/{fid}.wav"))
-    too_long_audio_mask = durations > 25
+    too_long_audio_mask = durations > MAX_DURATION
 
     bad_mask = too_few_words_mask | too_long_audio_mask
     notgood = raw_transcript.loc[bad_mask, "file_id"].tolist()
@@ -101,16 +107,16 @@ def write_transcript_file_mels(raw_transcript: pd.DataFrame, file_name_output: s
 if __name__ == "__main__":
     config = {
         "train": {
-            "metadata_path": "/gpfs0/bgu-benshimo/users/wavishay/projects/roboshual/saspeech_automatic_data/metadata.csv",
-            "input_path": "/gpfs0/bgu-benshimo/users/wavishay/projects/roboshual/saspeech_automatic_data/wavs/",
-            "output_path": "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/data/saspeech_automatic_data/wavs/",
-            "file_name_output": "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/train_list.txt"
+            "metadata_path": f"/gpfs0/bgu-benshimo/users/wavishay/projects/roboshual/saspeech_automatic_data/metadata.csv",
+            "input_path": f"/gpfs0/bgu-benshimo/users/wavishay/projects/roboshual/saspeech_automatic_data/wavs/",
+            "output_path": f"/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/data/trimm/saspeech_automatic_data/wavs/",
+            "file_name_output": f"/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/train_list{MAX_DURATION}.txt"
         },
         "dev": {
-            "metadata_path": "/gpfs0/bgu-benshimo/users/wavishay/projects/roboshual/saspeech_gold_standard/metadata_full.csv",
-            "input_path": "/gpfs0/bgu-benshimo/users/wavishay/projects/roboshual/saspeech_gold_standard/wavs/",
-            "output_path": "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/data/saspeech_gold_standard/wavs/",
-            "file_name_output": "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/dev_list.txt"
+            "metadata_path": f"/gpfs0/bgu-benshimo/users/wavishay/projects/roboshual/saspeech_gold_standard/metadata_full.csv",
+            "input_path": f"/gpfs0/bgu-benshimo/users/wavishay/projects/roboshual/saspeech_gold_standard/wavs/",
+            "output_path": f"/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/data/trimm/saspeech_gold_standard/wavs/",
+            "file_name_output": f"/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/dev_list{MAX_DURATION}.txt"
         }
     }
 
