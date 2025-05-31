@@ -40,9 +40,11 @@ def init_distributed(hparams, n_gpus, rank, group_name):
     print("Done initializing distributed")
 
 
-def prepare_dataloaders(hparams):
+def prepare_dataloaders(hparams, use_augmentation_audio, use_augmentation_mel):
     # Get data, data loaders and collate function ready
-    trainset = TextMelLoader(hparams.training_files, hparams)
+    trainset = TextMelLoader(hparams.training_files, hparams,
+                             use_augmentation_audio=use_augmentation_audio,
+                             use_augmentation_mel=use_augmentation_mel)
     valset = TextMelLoader(hparams.validation_files, hparams)
     collate_fn = TextMelCollate(hparams.n_frames_per_step)
 
@@ -148,7 +150,7 @@ def validate(model, criterion, valset, iteration, batch_size, n_gpus,
 
 
 def train(output_directory, log_directory, checkpoint_path, warm_start, n_gpus,
-          rank, group_name, hparams):
+          rank, group_name, hparams, use_augmentation_audio, use_augmentation_mel):
     """Training and validation logging results to tensorboard and stdout
 
     Params
@@ -184,7 +186,9 @@ def train(output_directory, log_directory, checkpoint_path, warm_start, n_gpus,
     logger = prepare_directories_and_logger(
         output_directory, log_directory, rank)
 
-    train_loader, valset, collate_fn = prepare_dataloaders(hparams)
+    train_loader, valset, collate_fn = prepare_dataloaders(hparams,
+                                                            use_augmentation_audio,
+                                                            use_augmentation_mel)
 
     # Load checkpoint if one exists
     iteration = 0
@@ -276,6 +280,10 @@ if __name__ == '__main__':
                         required=False, help='Distributed group name')
     parser.add_argument('--hparams', type=str,
                         required=False, help='comma separated name=value pairs')
+    parser.add_argument('--use_augmentation_audio', action='store_true',
+                        default=True, help='use audio augmentation')
+    parser.add_argument('--use_augmentation_mel', action='store_true',
+                        default=False, help='use mel augmentation')
 
     args = parser.parse_args()
     hparams = create_hparams(args.hparams)
@@ -290,4 +298,4 @@ if __name__ == '__main__':
     print("cuDNN Benchmark:", hparams.cudnn_benchmark)
 
     train(args.output_directory, args.log_directory, args.checkpoint_path,
-          args.warm_start, args.n_gpus, args.rank, args.group_name, hparams)
+          args.warm_start, args.n_gpus, args.rank, args.group_name, hparams, args.use_augmentation_audio, args.use_augmentation_mel)

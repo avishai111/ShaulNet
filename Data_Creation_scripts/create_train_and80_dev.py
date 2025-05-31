@@ -8,8 +8,8 @@ import torch
 # File Paths
 # -----------------------------
 # Existing file lists
-train_list_path = "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/train_list30.txt"
-dev_list_path = "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/dev_list30.txt"
+train_list_path = "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/train_list15.txt"
+dev_list_path = "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/dev_list15.txt"
 dev_20_path = "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/dev_20dev_list.txt"
 
 # Output file lists
@@ -42,7 +42,7 @@ missing = new_dev_df[new_dev_df['transcript'].isnull()]
 if not missing.empty:
     print("⚠️ WARNING: Missing transcripts for some dev_20 files:")
     print(missing)
-    raise ValueError("Some files in dev_20 not found in dev_list_mels.txt")
+    raise ValueError("Some files in dev_20 not found")
 
 # -----------------------------
 #  Create Weighted Training Set (Train + 80% Dev)

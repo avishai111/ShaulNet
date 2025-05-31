@@ -17,7 +17,7 @@ class HParams:
     ignore_layers: list = ('embedding.weight',)
 
     # Data Parameters
-    load_mel_from_disk: bool = True
+    load_mel_from_disk: bool = False
     training_files: str = '/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/train_with_80percent_dev_weighted.txt'
     validation_files: str = '/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/dev_with_20percent_weighted.txt'
     text_cleaners: list = ('basic_cleaners',)
@@ -68,10 +68,28 @@ class HParams:
     learning_rate: float = 1e-3
     weight_decay: float = 1e-6
     grad_clip_thresh: float = 1.0
-    batch_size: int = 32 #32
+    batch_size: int = 1 #32
     mask_padding: bool = True  # set model's padded outputs to padded values
 
-
+    # Audio-level
+    augment_noise_level = 0.003       # רעש לבן
+    augment_gain_min = 0.8
+    augment_gain_max = 1.2
+    augment_speed_min = 0.9
+    augment_speed_max = 1.1
+    augment_speed_prob = 0.3
+    augment_gain_prob = 0.3
+    augment_noise_prob = 0.5
+    augment_audio_prob = 0.25
+    
+    
+    # === Mel augmentation (SpecAugment-style) ===
+    augment_mel_num_masks = 2
+    augment_mel_max_freq_width = 10
+    augment_mel_max_time_width = 20
+    augment_mel_prob = 0.5
+    
+    
 def create_hparams(hparams_string=None, verbose=False):
     """Create model hyperparameters. Parse nondefault from given string."""
     hparams = HParams()

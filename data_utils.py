@@ -7,9 +7,74 @@ import layers
 from utils import load_wav_to_torch, load_filepaths_and_text
 from text import text_to_sequence
 
+def apply_mel_augmentation(mel: torch.Tensor, hparams) -> torch.Tensor:
+    """
+    Apply SpecAugment-style frequency and time masking to a mel-spectrogram.
+    """
+    if torch.rand(1).item() >= hparams.augment_mel_prob:
+        return mel  # ללא אוגמנטציה
+
+    mel = mel.clone()
+    num_mel_channels, num_frames = mel.shape
+
+    # Frequency Masking
+    for _ in range(hparams.augment_mel_num_masks):
+        f = np.random.randint(0, hparams.augment_mel_max_freq_width)
+        if f == 0:
+            continue
+        f0 = np.random.randint(0, max(1, num_mel_channels - f))
+        mel[f0:f0 + f, :] = 0
+
+    # Time Masking
+    for _ in range(hparams.augment_mel_num_masks):
+        t = np.random.randint(0, hparams.augment_mel_max_time_width)
+        if t == 0:
+            continue
+        t0 = np.random.randint(0, max(1, num_frames - t))
+        mel[:, t0:t0 + t] = 0
+
+    return mel
+
+
+def apply_audio_augmentation(audio: torch.Tensor, sampling_rate: int, hparams) -> torch.Tensor:
+    """
+    Apply waveform-level augmentations to raw audio using hparams.
+    """
+    audio = audio.clone()
+
+    if audio.dim() > 1:
+        audio = audio.squeeze(0)
+
+    if torch.rand(1).item() < hparams.augment_noise_prob:
+        noise = torch.randn_like(audio) * hparams.augment_noise_level
+        audio += noise
+
+    if torch.rand(1).item() < hparams.augment_gain_prob:
+        gain = np.random.uniform(hparams.augment_gain_min, hparams.augment_gain_max)
+        audio *= gain
+
+    if torch.rand(1).item() < hparams.augment_speed_prob:
+        try:
+            import torchaudio
+            speed = np.random.uniform(hparams.augment_speed_min, hparams.augment_speed_max)
+            new_sr = int(sampling_rate * speed)
+            audio = torchaudio.functional.resample(audio, orig_freq=sampling_rate, new_freq=new_sr)
+
+            if new_sr != sampling_rate:
+                audio = torchaudio.functional.resample(audio, orig_freq=new_sr, new_freq=sampling_rate)
+        except Exception as e:
+            print(f"⚠️ Resample failed: {e}")
+
+    return torch.clamp(audio, -1.0, 1.0)
+
+
+
+
+
+
 
 class TextMelLoader(torch.utils.data.Dataset):
-    def __init__(self, audiopaths_and_text, hparams):
+    def __init__(self, audiopaths_and_text, hparams,use_augmentation_mel=False, use_augmentation_audio=False):
         self.audiopaths_and_text = load_filepaths_and_text(audiopaths_and_text)
         self.text_cleaners = hparams.text_cleaners
         self.max_wav_value = hparams.max_wav_value
@@ -22,6 +87,16 @@ class TextMelLoader(torch.utils.data.Dataset):
         random.seed(hparams.seed)
         random.shuffle(self.audiopaths_and_text)
 
+        self.use_augmentation_audio = use_augmentation_audio
+        self.use_augmentation_mel = use_augmentation_mel
+        self.hparams = hparams
+        
+        if self.use_augmentation_mel or self.use_augmentation_audio:
+                print("Using data augmentation audio:", self.use_augmentation_audio)
+                print("Using data augmentation mel:", self.use_augmentation_mel)
+                print("Using load_mel_from_disk:", self.load_mel_from_disk)
+        
+        
     def get_mel_text_weight_pair(self, audiopath_and_text):
         if len(audiopath_and_text) == 3:
             audiopath, text, weight = audiopath_and_text
@@ -41,6 +116,8 @@ class TextMelLoader(torch.utils.data.Dataset):
             if sampling_rate != self.stft.sampling_rate:
                 raise ValueError(f"{sampling_rate} SR doesn't match target {self.stft.sampling_rate}")
             audio_norm = audio / self.max_wav_value
+            if if self.use_augmentation_audio and torch.rand(1).item() < self.hparams.augment_audio_prob:
+                audio_norm = apply_audio_augmentation(audio_norm, self.sampling_rate, self.hparams)
             audio_norm = audio_norm.unsqueeze(0)
             audio_norm = torch.autograd.Variable(audio_norm, requires_grad=False)
             melspec = self.stft.mel_spectrogram(audio_norm)
@@ -50,6 +127,8 @@ class TextMelLoader(torch.utils.data.Dataset):
             assert melspec.size(0) == self.stft.n_mel_channels, (
                 f'Mel dimension mismatch: given {melspec.size(0)}, expected {self.stft.n_mel_channels}'
             )
+            if self.use_augmentation_mel and torch.rand(1).item() < self.hparams.augment_mel_prob:
+                melspec = apply_mel_augmentation(melspec, self.hparams)
         return melspec
 
     def get_text(self, text):

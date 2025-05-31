@@ -14,6 +14,8 @@ import sys
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, parent_dir)
 
+USE_MELS = False
+
 # Hebrew-related libraries
 from hebrew import Hebrew
 from hebrew.chars import HebrewChar, ALEPH
@@ -89,8 +91,27 @@ def get_dataset_config(set_type: str, config: dict) -> Tuple[pd.DataFrame, str, 
     metadata = pd.read_csv(cfg["metadata_path"], delimiter='|')
     return metadata, cfg["file_name_output"], cfg["input_path"], cfg["output_path"]
 
+
 # ============================
-# Transcript Writer
+# Transcript Writer - Wav
+# ============================
+
+def write_transcript_file_wavs(raw_transcript: pd.DataFrame, file_name_output: str, input_path: str) -> None:
+    """
+    Writes file list for training with waveform inputs (not precomputed mels).
+    Format: /path/to/file.wav|transcript
+    """
+    with open(file_name_output, 'w', encoding='utf-8') as file:
+        for row in raw_transcript.itertuples(index=False):
+            wav_path = os.path.join(input_path, f"{row.file_id}.wav")
+            text = row.transcript_in_english.rstrip()
+            if not text.endswith('.'):
+                text += '.'
+            file.write(f"{wav_path}|{text}\n")
+
+
+# ============================
+# Transcript Writer - Mel Spectrograms
 # ============================
 def write_transcript_file_mels(raw_transcript: pd.DataFrame, file_name_output: str, input_path: str) -> None:
     with open(file_name_output, 'w', encoding='utf-8') as file:
@@ -133,7 +154,12 @@ if __name__ == "__main__":
         #     notgood=notgood
         # )
 
-        mel_output_path = output_path.replace("wavs", "mel_spectrograms")
-        write_transcript_file_mels(raw_transcript, file_name_output, mel_output_path)
+        
+        if USE_MELS:
+            mel_output_path = output_path.replace("wavs", "mel_spectrograms")
+            write_transcript_file_mels(raw_transcript, file_name_output, mel_output_path)
+        else:
+            write_transcript_file_wavs(raw_transcript, file_name_output, output_path)
+
 
         print(f"✓ Completed processing for {set_type} set.")
