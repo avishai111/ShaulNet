@@ -80,7 +80,7 @@ class HParams:
     augment_speed_prob = 0.3
     augment_gain_prob = 0.3
     augment_noise_prob = 0.5
-    augment_audio_prob = 0.25
+    augment_audio_prob = 0.5
     
     
     # === Mel augmentation (SpecAugment-style) ===
