@@ -68,7 +68,7 @@ class HParams:
     learning_rate: float = 1e-3
     weight_decay: float = 1e-6
     grad_clip_thresh: float = 1.0
-    batch_size: int = 1 #32
+    batch_size: int = 32 #32
     mask_padding: bool = True  # set model's padded outputs to padded values
 
     # Audio-level
