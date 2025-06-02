@@ -46,3 +46,6 @@ class Tacotron2Logger(SummaryWriter):
                 gate_targets[idx].data.cpu().numpy(),
                 torch.sigmoid(gate_outputs[idx]).data.cpu().numpy()),
             iteration, dataformats='HWC')
+
+    def log_scalar(self, tag, value, iteration):
+        self.add_scalar(tag, value, iteration)
