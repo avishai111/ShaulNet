@@ -2,7 +2,7 @@
 runai submit --name run1 -i registry.bgu.ac.il/hpc/jupyter-notebook:latest -e HOME=$HOME  -g 1 --cpu-limit 16 --large-shm -- "export LD_LIBRARY_PATH=/gpfs0/bgu-benshimo/users/wavishay/env/valle2/lib:$LD_LIBRARY_PATH
  && conda activate pythn_new && cd VallE-Heb/TTS2/Pytorch/ && python ./train.py"
  
- runai submit --name run2 -i registry.bgu.ac.il/hpc/jupyter-notebook:latest -e HOME=$HOME  -g 1 --cpu-limit 16 --large-shm -- "export LD_LIBRARY_PATH=/gpfs0/bgu-benshimo/users/wavishay/env/valle2/lib:$LD_LIBRARY_PATH
+ runai submit --name run2 -i registry.bgu.ac.il/hpc/jupyter-notebook:latest -e HOME=$HOME  -g 0.4 --cpu-limit 16 --large-shm -- "export LD_LIBRARY_PATH=/gpfs0/bgu-benshimo/users/wavishay/env/valle2/lib:$LD_LIBRARY_PATH
  && conda activate pythn_new && cd VallE-Heb/TTS2/Pytorch/ && python ./train.py"
 
 

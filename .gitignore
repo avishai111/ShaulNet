@@ -208,7 +208,8 @@ commands_tracatron2.text
 
 # Output directories
 
-
+output_dir_full_training_weighted_aug10/
+output_dir_full_training_weighted_aug/
 output_dir_full_training_weighted/
 output_dir_full_training/
 output_dir/
@@ -216,3 +217,4 @@ data/
 pretrained/
 RingFormer/pretrained/
 waveglow/
+Matcha_TTS/

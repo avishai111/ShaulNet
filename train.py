@@ -99,7 +99,7 @@ def warm_start_model(checkpoint_path, model, ignore_layers):
     return model
 
 
-def load_checkpoint(checkpoint_path, model, optimizer):
+def load_checkpoint(checkpoint_path, model, optimizer,scheduler=None):
     assert os.path.isfile(checkpoint_path)
     print("Loading checkpoint '{}'".format(checkpoint_path))
     checkpoint_dict = torch.load(checkpoint_path, map_location='cpu')
@@ -107,18 +107,25 @@ def load_checkpoint(checkpoint_path, model, optimizer):
     optimizer.load_state_dict(checkpoint_dict['optimizer'])
     learning_rate = checkpoint_dict['learning_rate']
     iteration = checkpoint_dict['iteration']
+    if scheduler is not None and 'scheduler' in checkpoint_dict:
+        scheduler.load_state_dict(checkpoint_dict['scheduler'])
+    
     print("Loaded checkpoint '{}' from iteration {}" .format(
         checkpoint_path, iteration))
     return model, optimizer, learning_rate, iteration
 
 
-def save_checkpoint(model, optimizer, learning_rate, iteration, filepath):
-    print("Saving model and optimizer state at iteration {} to {}".format(
+def save_checkpoint(model, optimizer, scheduler, learning_rate, iteration, filepath):
+    print("Saving model, optimizer and scheduler state at iteration {} to {}".format(
         iteration, filepath))
-    torch.save({'iteration': iteration,
-                'state_dict': model.state_dict(),
-                'optimizer': optimizer.state_dict(),
-                'learning_rate': learning_rate}, filepath)
+    torch.save({
+        'iteration': iteration,
+        'state_dict': model.state_dict(),
+        'optimizer': optimizer.state_dict(),
+        'scheduler': scheduler.state_dict(),
+        'learning_rate': learning_rate
+    }, filepath)
+
 
 
 def validate(model, criterion, valset, iteration, batch_size, n_gpus,
@@ -147,6 +154,10 @@ def validate(model, criterion, valset, iteration, batch_size, n_gpus,
     if rank == 0:
         print("Validation loss {}: {:9f}  ".format(iteration, val_loss))
         logger.log_validation(val_loss, model, y, y_pred, iteration)
+        logger.log_scalar("validation_loss", val_loss, iteration)
+
+    
+    return val_loss
 
 
 def train(output_directory, log_directory, checkpoint_path, warm_start, n_gpus,
@@ -162,6 +173,10 @@ def train(output_directory, log_directory, checkpoint_path, warm_start, n_gpus,
     rank (int): rank of current gpu
     hparams (object): comma separated list of "name=value" pairs.
     """
+    
+    best_val_loss = float('inf')
+
+
     if hparams.distributed_run:
         init_distributed(hparams, n_gpus, rank, group_name)
 
@@ -172,6 +187,8 @@ def train(output_directory, log_directory, checkpoint_path, warm_start, n_gpus,
     learning_rate = hparams.learning_rate
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate,
                                  weight_decay=hparams.weight_decay)
+    
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.95)
 
     if hparams.fp16_run:
         from apex import amp
@@ -199,7 +216,7 @@ def train(output_directory, log_directory, checkpoint_path, warm_start, n_gpus,
                 checkpoint_path, model, hparams.ignore_layers)
         else:
             model, optimizer, _learning_rate, iteration = load_checkpoint(
-                checkpoint_path, model, optimizer)
+                checkpoint_path, model, optimizer, scheduler)
             if hparams.use_saved_learning_rate:
                 learning_rate = _learning_rate
             iteration += 1  # next iteration is iteration + 1
@@ -210,12 +227,12 @@ def train(output_directory, log_directory, checkpoint_path, warm_start, n_gpus,
     # ================ MAIN TRAINNIG LOOP! ===================
     for epoch in range(epoch_offset, hparams.epochs):
         print("Epoch: {}".format(epoch))
+        if rank == 0:
+             print(f"Epoch {epoch} started | Current LR: {optimizer.param_groups[0]['lr']:.6e}")
         for i, batch in enumerate(train_loader):
             torch.cuda.empty_cache()  # Periodically clear unused memory
 
             start = time.perf_counter()
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = learning_rate
 
             model.zero_grad()
             x, y = model.parse_batch(batch)
@@ -241,32 +258,45 @@ def train(output_directory, log_directory, checkpoint_path, warm_start, n_gpus,
                     model.parameters(), hparams.grad_clip_thresh)
 
             optimizer.step()
+            scheduler.step()
+            current_lr = optimizer.param_groups[0]['lr']
 
             if not is_overflow and rank == 0:
                 duration = time.perf_counter() - start
-                print("Train loss {} {:.6f} Grad Norm {:.6f} {:.2f}s/it".format(
-                    iteration, reduced_loss, grad_norm, duration))
+                print("Train loss {} {:.6f} Grad Norm {:.6f} {:.2f}s/it, LR: {:.6e}".format(
+                    iteration, reduced_loss, grad_norm, duration, current_lr))
                 logger.log_training(
-                    reduced_loss, grad_norm, learning_rate, duration, iteration)
+                    reduced_loss, grad_norm, current_lr, duration, iteration)
 
             if not is_overflow and (iteration % hparams.iters_per_checkpoint == 0):
-                validate(model, criterion, valset, iteration,
-                         hparams.batch_size, n_gpus, collate_fn, logger,
-                         hparams.distributed_run, rank)
+                val_loss = validate(model, criterion, valset, iteration,
+                                    hparams.batch_size, n_gpus, collate_fn, logger,
+                                    hparams.distributed_run, rank)
+
                 if rank == 0:
                     checkpoint_path = os.path.join(
-                        output_directory, "checkpoint_{}".format(iteration))
-                    save_checkpoint(model, optimizer, learning_rate, iteration,
-                                    checkpoint_path)
+                        output_directory, f"checkpoint_{iteration}.pth")
+                    save_checkpoint(model, optimizer, scheduler, current_lr, iteration, checkpoint_path)
+
+                    # Save best model if improved
+                    if val_loss < best_val_loss:
+                        best_val_loss = val_loss
+                        best_model_path = os.path.join(output_directory, "best_model.pth")
+                        
+                        print(f"✅ New best model at iteration {iteration} (val loss: {val_loss:.6f})")
+                        save_checkpoint(model, optimizer, scheduler, current_lr, iteration, best_model_path)
+                    else:
+                        print(f"No improvement. Validation loss: {val_loss:.6f} (best: {best_val_loss:.6f})")
+
 
             iteration += 1
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-o', '--output_directory', type=str, default='/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/output_dir_full_training_weighted_aug/',
+    parser.add_argument('-o', '--output_directory', type=str, default='/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/output_dir_full_training_weighted_aug10/',
                         help='directory to save checkpoints')
-    parser.add_argument('-l', '--log_directory', type=str, default='/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/output_dir_full_training_weighted_aug/logs',
+    parser.add_argument('-l', '--log_directory', type=str, default='/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/output_dir_full_training_weighted_aug10/logs',
                         help='directory to save tensorboard logs')
     parser.add_argument('-c', '--checkpoint_path', type=str, default='/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/pretrained/tacotron2_model.pth',
                         required=False, help='checkpoint path')

@@ -45,7 +45,7 @@ class HParams:
     n_frames_per_step: int = 1  # currently only 1 is supported
     decoder_rnn_dim: int = 1024
     prenet_dim: int = 256
-    max_decoder_steps: int = 1000
+    max_decoder_steps: int = 900
     gate_threshold: float = 0.5
     p_attention_dropout: float = 0.1
     p_decoder_dropout: float = 0.1
@@ -68,7 +68,7 @@ class HParams:
     learning_rate: float = 1e-3
     weight_decay: float = 1e-6
     grad_clip_thresh: float = 1.0
-    batch_size: int = 32 #32
+    batch_size: int = 64 #32
     mask_padding: bool = True  # set model's padded outputs to padded values
 
     # Audio-level

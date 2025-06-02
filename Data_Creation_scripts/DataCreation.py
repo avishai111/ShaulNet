@@ -23,7 +23,7 @@ from hebrew import GematriaTypes
 from HebrewToEnglish import HebrewToEnglish
 
 
-MAX_DURATION = 15  # Maximum duration in seconds for audio files
+MAX_DURATION = 12  # Maximum duration in seconds for audio files
 # ============================
 # Audio Utility
 # ============================
@@ -39,11 +39,12 @@ def filter_and_clean_transcripts(metadata: pd.DataFrame, audio_base_path: str) -
     raw_transcript["transcript_in_english"] = raw_transcript["transcript_in_english"].astype(str).str.rstrip()
 
     word_counts = raw_transcript["transcript_in_english"].str.split().apply(len)
-    too_few_words_mask = word_counts < 1
+    too_few_words_mask = word_counts < 2
     durations = raw_transcript["file_id"].apply(lambda fid: get_duration_in_seconds(f"{audio_base_path}/{fid}.wav"))
     too_long_audio_mask = durations > MAX_DURATION
-
-    bad_mask = too_few_words_mask | too_long_audio_mask
+    too_short = durations < 0.1
+    
+    bad_mask = too_few_words_mask | too_long_audio_mask | too_short
     notgood = raw_transcript.loc[bad_mask, "file_id"].tolist()
 
     print(f"Filtered out {len(notgood)} entries with too few words or too long audio.")

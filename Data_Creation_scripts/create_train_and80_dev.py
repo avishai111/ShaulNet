@@ -7,9 +7,12 @@ import torch
 # -----------------------------
 # File Paths
 # -----------------------------
+
+MAX_DURATION = 12 
+
 # Existing file lists
-train_list_path = "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/train_list15.txt"
-dev_list_path = "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/dev_list15.txt"
+train_list_path = f"/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/train_list{MAX_DURATION}.txt"
+dev_list_path = f"/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/dev_list{MAX_DURATION}.txt"
 dev_20_path = "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/filelists/dev_20dev_list.txt"
 
 # Output file lists
@@ -32,11 +35,19 @@ train_df = load_transcript_list(train_list_path)
 dev_df = load_transcript_list(dev_list_path)
 dev_20_df = load_transcript_list(dev_20_path)
 
+print("train_df:", train_df.isnull().any())
+print("dev_df:", dev_df.isnull().any())
+print("dev_20_df:", dev_20_df.isnull().any())
 # -----------------------------
 # Create New Dev Set (20%)
 # -----------------------------
-new_dev_df = pd.merge(dev_20_df[['mel_path']], dev_df, on='mel_path', how='left')
+dev_df['mel_path'] = dev_df['mel_path'].str.strip()
+dev_20_df['mel_path'] = dev_20_df['mel_path'].str.strip()
 
+# סנן את dev_df לפי קבצים שקיימים ב-dev_20_df
+new_dev_df = dev_df[dev_df['mel_path'].isin(dev_20_df['mel_path'])].copy()
+
+print("new_dev_df:", new_dev_df.isnull().any())
 # Validate all entries in dev_20 exist in dev
 missing = new_dev_df[new_dev_df['transcript'].isnull()]
 if not missing.empty:
@@ -56,10 +67,10 @@ total = num_train + num_dev
 train_weight = total / num_train
 dev_weight = total / num_dev
 
-scaling_factor = len(train_df) / len(remaining_dev_df)
+#scaling_factor = len(train_df) / len(remaining_dev_df)
 
 train_df["weight"] = 1.0
-remaining_dev_df["weight"] = scaling_factor
+remaining_dev_df["weight"] = 2.0
 
 weighted_train_df = pd.concat([train_df, remaining_dev_df]).reset_index(drop=True)
 
