@@ -17,10 +17,10 @@ from Matcha_TTS.matcha.utils.utils import intersperse
 # === Tacotron2 ===
 from speechbrain.inference.TTS import Tacotron2 as Tacotron2
 from speechbrain.inference.vocoders import HIFIGAN as SBHifiGAN
-from text import text_to_sequence as tacotron_text_to_sequence
+from tracatron2.text import text_to_sequence as tacotron_text_to_sequence
 
 # === BigVGAN ===
-from bigvgan import BigVGAN
+from BigVGAN.bigvgan import BigVGAN
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

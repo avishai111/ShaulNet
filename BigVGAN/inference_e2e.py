@@ -1,6 +1,14 @@
 # Adapted from https://github.com/jik876/hifi-gan under the MIT license.
 #   LICENSE is in incl_licenses directory.
 
+import os
+import sys
+
+# Resolve the absolute path to the project root (handles any location)
+current_dir = os.path.dirname(os.path.abspath(__file__)) #
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import glob

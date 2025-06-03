@@ -9,6 +9,14 @@ import json
 from pathlib import Path
 from typing import Optional, Union, Dict
 
+import os
+import sys
+
+# Resolve the absolute path to the project root (handles any location)
+current_dir = os.path.dirname(os.path.abspath(__file__)) #
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
 import torch
 import torch.nn as nn
 from torch.nn import Conv1d, ConvTranspose1d

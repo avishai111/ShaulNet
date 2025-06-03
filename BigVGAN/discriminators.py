@@ -12,8 +12,16 @@ from torch.nn import Conv2d
 from torch.nn.utils import weight_norm, spectral_norm
 from torchaudio.transforms import Spectrogram, Resample
 
+import os
+import sys
+
+# Resolve the absolute path to the project root (handles any location)
+current_dir = os.path.dirname(os.path.abspath(__file__)) #
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
 from env import AttrDict
-from utils import get_padding
+from util2 import get_padding
 import typing
 from typing import Optional, List, Union, Dict, Tuple
 
