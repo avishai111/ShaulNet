@@ -98,9 +98,6 @@ For questions, issues, or collaboration ideas:
 
 🐙 [GitHub](https://github.com/avishai111)
 
-
-```
-
 ---
 
 
