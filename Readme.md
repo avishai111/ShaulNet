@@ -91,9 +91,13 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 ## 📞 Contact
 
 For questions, issues, or collaboration ideas:
+
 📧 [Avishai Weizman](mailto:Avishai11900@gmail.com)
+
 🔗 [LinkedIn](https://www.linkedin.com/in/avishai-weizman/)
+
 🐙 [GitHub](https://github.com/avishai111)
+
 
 ```
 
