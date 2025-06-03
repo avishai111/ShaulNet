@@ -213,8 +213,6 @@ output_dir_full_training_weighted_aug/
 output_dir_full_training_weighted/
 output_dir_full_training/
 output_dir/
-data/
-pretrained/
-RingFormer/pretrained/
-waveglow/
-checkpoints/
+data/*
+pretrained/*
+checkpoints/*

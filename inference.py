@@ -7,15 +7,15 @@ from omegaconf import DictConfig, OmegaConf
 import hydra
 
 # === Matcha ===
-from matcha.models.matcha_tts import MatchaTTS
-from matcha.hifigan.models import Generator as MatchaVocoder
-from matcha.hifigan.config import v1 as matcha_hifigan_config
-from matcha.hifigan.denoiser import Denoiser as MatchaDenoiser
-from matcha.text import text_to_sequence as matcha_text_to_sequence
-from matcha.utils.utils import intersperse
+from Matcha_TTS.matcha.models.matcha_tts import MatchaTTS
+from Matcha_TTS.matcha.hifigan.models import Generator as MatchaVocoder
+from Matcha_TTS.matcha.hifigan.config import v1 as matcha_hifigan_config
+from Matcha_TTS.matcha.hifigan.denoiser import Denoiser as MatchaDenoiser
+from Matcha_TTS.matcha.text import text_to_sequence as matcha_text_to_sequence
+from Matcha_TTS.matcha.utils.utils import intersperse
 
 # === Tacotron2 ===
-from speechbrain.inference.TTS import Tacotron2 as SBTacotron2
+from speechbrain.inference.TTS import Tacotron2 as Tacotron2
 from speechbrain.inference.vocoders import HIFIGAN as SBHifiGAN
 from text import text_to_sequence as tacotron_text_to_sequence
 
@@ -36,7 +36,7 @@ def main(cfg: DictConfig):
         mel = model.synthesise(seq, torch.tensor([seq.shape[-1]], device=device))[0]['mel']
 
     elif cfg.model.type == "tacotron2":
-        model = SBTacotron2.from_hparams(source=cfg.model.source, savedir=cfg.model.savedir, run_opts={"device": device})
+        model = Tacotron2.from_hparams(source=cfg.model.source, savedir=cfg.model.savedir, run_opts={"device": device})
         seq = model.encode_text(text)
         mel = model(seq).squeeze(0).permute(1, 0)  # [T, 80] → [80, T]
 
