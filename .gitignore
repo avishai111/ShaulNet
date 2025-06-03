@@ -217,4 +217,4 @@ data/
 pretrained/
 RingFormer/pretrained/
 waveglow/
-Matcha_TTS/
+checkpoints/

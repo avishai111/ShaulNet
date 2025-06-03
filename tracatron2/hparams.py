@@ -89,6 +89,8 @@ class HParams:
     augment_mel_max_time_width = 20
     augment_mel_prob = 0.5
     
+    min_learning_rate: float = 3e-5
+    
     
 def create_hparams(hparams_string=None, verbose=False):
     """Create model hyperparameters. Parse nondefault from given string."""

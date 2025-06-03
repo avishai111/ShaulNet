@@ -175,8 +175,7 @@ def train(output_directory, log_directory, checkpoint_path, warm_start, n_gpus,
     """
     
     best_val_loss = float('inf')
-
-
+    current_lr = hparams.learning_rate
     if hparams.distributed_run:
         init_distributed(hparams, n_gpus, rank, group_name)
 
@@ -258,9 +257,7 @@ def train(output_directory, log_directory, checkpoint_path, warm_start, n_gpus,
                     model.parameters(), hparams.grad_clip_thresh)
 
             optimizer.step()
-            scheduler.step()
-            current_lr = optimizer.param_groups[0]['lr']
-
+    
             if not is_overflow and rank == 0:
                 duration = time.perf_counter() - start
                 print("Train loss {} {:.6f} Grad Norm {:.6f} {:.2f}s/it, LR: {:.6e}".format(
@@ -288,6 +285,9 @@ def train(output_directory, log_directory, checkpoint_path, warm_start, n_gpus,
                     else:
                         print(f"No improvement. Validation loss: {val_loss:.6f} (best: {best_val_loss:.6f})")
 
+            scheduler.step()
+            current_lr = optimizer.param_groups[0]['lr']
+            current_lr = max(hparams.min_learning_rate, current_lr)
 
             iteration += 1
 
