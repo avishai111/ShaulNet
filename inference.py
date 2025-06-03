@@ -6,6 +6,9 @@ from pathlib import Path
 from omegaconf import DictConfig, OmegaConf
 import hydra
 
+# === BigVGAN ===
+from BigVGAN.bigvgan import BigVGAN
+
 # === Matcha ===
 from Matcha_TTS.matcha.models.matcha_tts import MatchaTTS
 from Matcha_TTS.matcha.hifigan.models import Generator as MatchaVocoder
@@ -19,8 +22,7 @@ from speechbrain.inference.TTS import Tacotron2 as Tacotron2
 from speechbrain.inference.vocoders import HIFIGAN as SBHifiGAN
 from tracatron2.text import text_to_sequence as tacotron_text_to_sequence
 
-# === BigVGAN ===
-from BigVGAN.bigvgan import BigVGAN
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
