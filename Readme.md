@@ -78,7 +78,7 @@ ShaulNet/
 ## 🙏 Acknowledgments
 
 * This project is based in part on the **English-to-Hebrew preprocessing** logic from [maxmelichov/Text-To-speech](https://github.com/maxmelichov/Text-To-speech).
-* We would like to thank the developers of all the referenced projects above for their open-source contributions to the speech synthesis community.
+* We would like to thank the developers and researchers of all the referenced projects above for their open-source contributions to the speech synthesis community.
 
 ---
 
