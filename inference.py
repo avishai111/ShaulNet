@@ -1,4 +1,6 @@
 import torch
+import os
+import sys
 import datetime
 from typing import Union, Dict, List, Optional, Tuple, Any, Callable, Type
 import warnings
@@ -9,7 +11,10 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from omegaconf import DictConfig, OmegaConf
 import hydra
+
+# Preprocess imports
 from Data_Creation_scripts.HebrewToEnglish import HebrewToEnglish
+
 # === BigVGAN ===
 from BigVGAN.bigvgan import BigVGAN
 
@@ -189,7 +194,7 @@ def vocode_bigvgan(vocoder_cfg: Dict,mel: torch.Tensor ,device: torch.device) ->
     return voc(mel.unsqueeze(0)).squeeze()
 
 @torch.inference_mode()
-def vocode_griffinlim(griffinlim_cfg: Dict,mel: torch.Tensor) -> torch.Tensor:
+def vocode_griffinlim(cfg: Dict,mel: torch.Tensor) -> torch.Tensor:
     """
     Converts a mel-spectrogram to waveform using the Griffin-Lim algorithm.
 
@@ -202,10 +207,11 @@ def vocode_griffinlim(griffinlim_cfg: Dict,mel: torch.Tensor) -> torch.Tensor:
 
     Returns:
         torch.Tensor: Reconstructed waveform as a 1D tensor.
-    """    
+    """
+    griffinlim_cfg = cfg.vocoder_griffinlim
     mel = mel.cpu().detach().numpy()
     mel = np.exp(mel)
-    stft = librosa.feature.inverse.mel_to_stft(mel, sr = griffinlim_cfg.sampling_rate, n_fft= griffinlim_cfg.n_fft)
+    stft = librosa.feature.inverse.mel_to_stft(mel, sr = cfg.sampling_rate, n_fft= griffinlim_cfg.n_fft)
     return librosa.griffinlim(stft, n_iter=griffinlim_cfg.n_iter ,hop_length = griffinlim_cfg.hop_length, win_length = griffinlim_cfg.win_length)
 
 def vocode_ringformer(vocoder_cfg: Dict, mel: torch.Tensor, SPEAKER_ID: int, device: torch.device) -> torch.Tensor:
@@ -278,31 +284,29 @@ def main(cfg: DictConfig):
     model_type = None
     # Model inference
     if cfg.model.type == "matcha":
-        model_type = "matcha"
         mel = infer_matcha(cfg.model_matcha, text, device)
     elif cfg.model.type == "tacotron2":
-        model_type = "tacotron2"
         mel = infer_tacotron2(cfg.model_tacotron2, text, device)
     else:
         raise ValueError(f"Unknown model type: {cfg.model}")
 
     # Vocoder
     if cfg.vocoder.type == "hifigan":
-        audio = vocode_hifigan(cfg.vocoder_hifigan, mel, model_type, device)
+        audio = vocode_hifigan(cfg.vocoder_hifigan, mel, cfg.model.type, device)
     elif cfg.vocoder.type == "bigvgan":
         audio = vocode_bigvgan(cfg.vocoder_bigvgan, mel, device)
     elif cfg.vocoder.type == "griffinlim":
-        audio = vocode_griffinlim(cfg.vocoder_griffinlim, mel)
+        audio = vocode_griffinlim(cfg, mel)
     elif cfg.vocoder.type == "ringformer":
         audio = vocode_ringformer(cfg.vocoder_ringformer, mel, 0,device)
     else:
         raise ValueError(f"Unknown vocoder type: {cfg}")
 
     # Save audio
-    output_path = Path(cfg.inference.output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    sf.write(output_path, audio.cpu().numpy(), cfg.vocoder.sampling_rate)
-    print(f"Saved to {output_path}")
+    output_file = Path(cfg.inference.output_file)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    sf.write(output_file, audio.cpu().numpy(), cfg.sampling_rate)
+    print(f"Saved to {output_file}")
 
 if __name__ == "__main__":
     main()
