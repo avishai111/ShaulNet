@@ -1,16 +1,34 @@
-model:
-  type: "matcha"  # או "tacotron2" או "ringformer"
-  checkpoint: "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/checkpoints/matcha_tts/logs/train/ljspeech/runs/2025-06-02_14-11-39/checkpoints/checkpoint_epoch=2679.ckpt"
+model_matcha:
+  savedir: "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/checkpoints/matcha_tts/"
+  checkpoint: "logs/train/ljspeech/runs/2025-06-02_14-11-39/checkpoints/checkpoint_epoch=2679.ckpt"
+  
+model_tracatron2: 
   source: "speechbrain/tts-tacotron2-ljspeech"
   savedir: "pretrained/tacotron2"
 
-vocoder:
-  type: "hifigan"  # או "bigvgan" או "griffinlim"
-  checkpoint: "pretrained_models/hifigan_pretrained/generator.ckpt"
-  source: "nvidia/bigvgan_v2_22khz_80band_fmax8k_256x"
-  savedir: "pretrained/hifigan"
+vocoder_hifigan:
+  checkpoint: "generator.ckpt"
+  savedir: "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/pretrained_models/hifigan_pretrained/"
+  source: "speechbrain/tts-hifigan-ljspeech"
   sampling_rate: 22050
   denoise_strength: 0.01
+
+vocoder_bigvgan:
+  checkpoint: "nvidia/bigvgan_v2_22khz_80band_fmax8k_256x"
+  savedir: "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/pretrained_models/bigvgan_pretrained/"
+  sampling_rate: 22050
+
+vocoder_griffinlim:
+  n_fft: 1024
+  win_length: 1024
+  hop_length: 256
+  n_mels: 80
+  sampling_rate: 22050
+
+vocoder_ringformer:
+  config: "vits2_ljs_ring.json"
+  checkpoint_path: "G_350000.pth"
+  savedir: "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/pretrained_models/RingFormer_pretrained/"
 
 inference:
   text: "שָׁלוֹם, מַה נִּשְׁמַע?"
