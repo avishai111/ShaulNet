@@ -157,8 +157,6 @@ def vocode_hifigan(vocoder_cfg: Dict, mel: torch.Tensor,model_type: str ,device:
     Returns:
         torch.Tensor: Synthesized waveform as a 1D tensor.
     """
-    if model_type == "matcha":  
-        mel = mel['mel']
     mel = mel.to(device).float()
     
     # Load HiFi-GAN vocoder
@@ -188,10 +186,10 @@ def vocode_bigvgan(vocoder_cfg: Dict,mel: torch.Tensor ,device: torch.device) ->
     """
     mel = mel.to(device).float()  # Ensure mel is on the correct device
     bigvgan_path = os.path.join(vocoder_cfg.savedir, vocoder_cfg.checkpoint)
-    voc = BigVGAN.from_pretrained(bigvgan_path, use_cuda_kernel=False).to(device).eval()
+    voc = BigVGAN.from_pretrained(vocoder_cfg.checkpoint,cache_dir = vocoder_cfg.savedir, use_cuda_kernel=False).to(device)
     voc.remove_weight_norm()
-    voc = voc.eval().to(device) 
-    return voc(mel.unsqueeze(0)).squeeze()
+    voc.eval() 
+    return voc(mel).squeeze()
 
 @torch.inference_mode()
 def vocode_griffinlim(cfg: Dict,mel: torch.Tensor) -> torch.Tensor:
@@ -284,7 +282,8 @@ def main(cfg: DictConfig):
     model_type = None
     # Model inference
     if cfg.model.type == "matcha":
-        mel = infer_matcha(cfg.model_matcha, text, device)
+        output = infer_matcha(cfg.model_matcha, text, device)
+        mel = output['mel']  # Extract mel-spectrogram from the output
     elif cfg.model.type == "tacotron2":
         mel = infer_tacotron2(cfg.model_tacotron2, text, device)
     else:
@@ -292,7 +291,7 @@ def main(cfg: DictConfig):
 
     # Vocoder
     if cfg.vocoder.type == "hifigan":
-        audio = vocode_hifigan(cfg.vocoder_hifigan, mel, cfg.model.type, device)
+        audio = vocode_hifigan(cfg.vocoder_hifigan, mel, device)
     elif cfg.vocoder.type == "bigvgan":
         audio = vocode_bigvgan(cfg.vocoder_bigvgan, mel, device)
     elif cfg.vocoder.type == "griffinlim":

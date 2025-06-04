@@ -214,5 +214,5 @@ output_dir_full_training_weighted/
 output_dir_full_training/
 output_dir/
 data/*
-pretrained/*
+pretrained_models/*
 checkpoints/*
