@@ -1,5 +1,7 @@
 import torch
 import datetime
+from typing import Union, Dict, List, Optional, Tuple, Any, Callable, Type
+import warnings
 import librosa
 import numpy as np
 import soundfile as sf
@@ -26,7 +28,7 @@ from speechbrain.inference.vocoders import HIFIGAN as SBHifiGAN
 from tracatron2.text import text_to_sequence as tacotron_text_to_sequence
 
 # === Plotting ===
-def plot_mel(mel, title="Mel-Spectrogram"):
+def plot_mel(mel: Union[torch.Tensor, 'np.ndarray'], title: str = "Mel-Spectrogram") -> None:
     """
     Plots a mel-spectrogram.
 
@@ -49,7 +51,21 @@ def plot_mel(mel, title="Mel-Spectrogram"):
 # === MatchaTTS model inference ===
 
 @torch.inference_mode()
-def process_text(text: str, device: torch.device):
+def process_text(text: str, device: torch.device) -> Dict[str, torch.Tensor | str]:
+     """
+    Converts raw text into a tokenized tensor input for Matcha-TTS and extracts metadata.
+
+    Args:
+        text (str): The input text to be processed.
+        device (torch.device): The target device for the resulting tensors (e.g., CPU or CUDA).
+
+    Returns:
+        Dict[str, Union[torch.Tensor, str]]: A dictionary containing:
+            - 'x_orig' (str): The original input text.
+            - 'x' (torch.Tensor): Tokenized tensor representation of the input text.
+            - 'x_lengths' (torch.Tensor): Length of the tokenized input.
+            - 'x_phones' (str): Human-readable phoneme sequence from the tokens.
+    """
     x = torch.tensor(intersperse(matcha_text_to_sequence(text, ['basic_cleaners'])[0], 0),dtype=torch.long, device=device)[None]
     x_lengths = torch.tensor([x.shape[-1]],dtype=torch.long, device=device)
     x_phones = matcha_sequence_to_text(x.squeeze(0).tolist())
@@ -61,7 +77,24 @@ def process_text(text: str, device: torch.device):
     }
 
 @torch.inference_mode()
-def infer_matcha(model_cfg, text, device):
+def infer_matcha(model_cfg: Dict,text: Union[str, torch.Tensor],device: torch.device) -> torch.Tensor:
+    """
+    Performs inference using the Matcha-TTS model on the given text input.
+
+    Args:
+        model_cfg (Dict): Configuration dictionary containing the model checkpoint path under `checkpoint`.
+        text (Union[str, torch.Tensor]): The input text to synthesize (can be raw text or pre-tokenized tensor).
+        device (torch.device): The device to run inference on (CPU or CUDA).
+
+    Returns:
+        Dict[str, Union[torch.Tensor, str, datetime.datetime]]: A dictionary containing:
+            - 'audio' (torch.Tensor): The generated waveform or mel-spectrogram (depending on model).
+            - 'start_t' (datetime.datetime): Timestamp when inference started.
+            - 'x_orig' (str): The original input text.
+            - 'x' (torch.Tensor): Tokenized tensor input.
+            - 'x_lengths' (torch.Tensor): Sequence length tensor.
+            - 'x_phones' (str): Readable phoneme string of the input.
+    """
     ## Number of ODE Solver steps
     n_timesteps = 10
     ## Changes to the speaking rate
@@ -86,7 +119,18 @@ def infer_matcha(model_cfg, text, device):
 
 # === Tacotron2 model inference ===
 @torch.inference_mode()
-def infer_tacotron2(model_cfg, text, device):
+def infer_tacotron2(model_cfg: Dict, text: Union[str, torch.Tensor], device: torch.device) -> torch.Tensor:
+    """
+    Runs inference using a Tacotron2 model to generate a mel-spectrogram from input text.
+
+    Args:
+        model_cfg (Dict): Dictionary containing model configuration. Must include a 'checkpoint' path.
+        text (Union[str, torch.Tensor]): Input text as a string or pre-tokenized tensor.
+        device (torch.device): The device to run inference on (e.g., torch.device("cuda")).
+
+    Returns:
+        torch.Tensor: The generated mel-spectrogram tensor.
+    """
     model = Tacotron2.from_hparams(source=model_cfg.source, savedir=model_cfg.savedir,
                                    run_opts={"device": device})
     seq = model.encode_text(text)
@@ -95,31 +139,129 @@ def infer_tacotron2(model_cfg, text, device):
 
 # === Vocoder inference ===
 @torch.inference_mode()
-def vocode_hifigan(vocoder_cfg, mel, model_type, device): # Until here I CHECKED!!!
-    if model_type == "matcha":
-        voc = MatchaVocoder(matcha_hifigan_config).to(device)
-        voc.load_state_dict(torch.load(vocoder_cfg.checkpoint, map_location=device)['generator'])
-        voc.eval().remove_weight_norm()
-        denoiser = MatchaDenoiser(voc)
-        audio = voc(mel.unsqueeze(0)).squeeze(0)
-        return denoiser(audio, strength=vocoder_cfg.denoise_strength).squeeze()
-    else:
-        voc = SBHifiGAN.from_hparams(source=vocoder_cfg.source, savedir=vocoder_cfg.savedir,
-                                     run_opts={"device": device})
-        return voc.decode_batch(mel.unsqueeze(0)).squeeze()
+def vocode_hifigan(vocoder_cfg: Dict, mel: torch.Tensor,device: torch.device) -> torch.Tensor:
+    """
+    Synthesizes waveform from a mel-spectrogram using a pretrained HiFi-GAN vocoder.
 
+    Args:
+        vocoder_cfg (Dict): Configuration dictionary with `source` and `savedir` for loading HiFi-GAN.
+        mel (torch.Tensor): Mel-spectrogram of shape (n_mels, time).
+        device (torch.device): Device to run the vocoder on.
+
+    Returns:
+        torch.Tensor: Synthesized waveform as a 1D tensor.
+    """
+    mel = mel.to(device).float()
+    
+    # Load HiFi-GAN vocoder
+    voc = SBHifiGAN.from_hparams(
+        source=vocoder_cfg['source'],
+        savedir=vocoder_cfg['savedir'],
+        run_opts={"device": device}
+    )
+    voc.eval()
+    voc = voc.to(device)
+
+    # Generate waveform
+    waveform = voc.decode_batch(mel.unsqueeze(0)).squeeze()
+    return waveform
 @torch.inference_mode()
-def vocode_bigvgan(vocoder_cfg, mel, device):
+def vocode_bigvgan(vocoder_cfg: Dict,mel: torch.Tensor,device: torch.device) -> torch.Tensor:
+    """
+    Synthesizes waveform from a mel-spectrogram using a pretrained BigVGAN vocoder.
+
+    Args:
+        vocoder_cfg (Dict): Configuration with a `source` key specifying the model location.
+        mel (torch.Tensor): Mel-spectrogram tensor of shape (n_mels, time).
+        device (torch.device): Device to run the vocoder on (e.g., torch.device("cuda")).
+
+    Returns:
+        torch.Tensor: The generated waveform tensor.
+    """
+    mel = mel.to(device).float()  # Ensure mel is on the correct device
     voc = BigVGAN.from_pretrained(vocoder_cfg.source, use_cuda_kernel=False).to(device).eval()
     voc.remove_weight_norm()
+    voc = voc.eval().to(device) 
     return voc(mel.unsqueeze(0)).squeeze()
 
 @torch.inference_mode()
-def vocode_griffinlim(vocoder_cfg, mel):
+def vocode_griffinlim(vocoder_cfg: Dict,mel: torch.Tensor) -> torch.Tensor:
+    """
+    Converts a mel-spectrogram to waveform using the Griffin-Lim algorithm.
+
+    Args:
+        vocoder_cfg (Dict): Configuration dictionary with:
+            - 'sampling_rate': Sampling rate of the audio.
+            - 'hop_length': Hop length for STFT.
+            - 'win_length': Window length for STFT.
+        mel (torch.Tensor): Mel-spectrogram of shape (n_mels, time).
+
+    Returns:
+        torch.Tensor: Reconstructed waveform as a 1D tensor.
+    """
     mel = mel.cpu().detach().numpy()
     mel = np.exp(mel)
     stft = librosa.feature.inverse.mel_to_stft(mel, sr=vocoder_cfg.sampling_rate, n_fft=1024)
-    return librosa.griffinlim(stft, n_iter=60)
+    return librosa.griffinlim(stft, n_iter=100,hop_length = vocoder_cfg.hop_length, win_length=vocoder_cfg.win_length)
+
+
+def vocode_ringformer(vocoder_cfg: Dict, mel: torch.Tensor, SPEAKER_ID: int, device: torch.device) -> torch.Tensor:
+    """
+    Synthesizes waveform from mel-spectrogram using Ringformer/VITS-style model.
+
+    Args:
+        vocoder_cfg (Dict): Configuration dictionary. Must contain 'hps' and 'checkpoint_path'.
+        mel (torch.Tensor): Input mel-spectrogram tensor of shape [1, 80, T].
+        SPEAKER_ID (int): ID of the speaker for multi-speaker synthesis.
+        device (torch.device): Target device.
+
+    Returns:
+        torch.Tensor: Generated waveform as a 1D tensor.
+    """
+    hps = vocoder_cfg['hps']
+    CHECKPOINT_PATH = vocoder_cfg['checkpoint_path']
+
+    if hps['model']['use_mel_posterior_encoder']:
+        print("Using mel posterior encoder for VITS2")
+        posterior_channels = 80
+        hps['data']['use_mel_posterior_encoder'] = True
+    else:
+        print("Using lin posterior encoder for VITS1")
+        posterior_channels = hps['data']['filter_length'] // 2 + 1
+        hps['data']['use_mel_posterior_encoder'] = False
+
+    # Build the model
+    net_g = SynthesizerTrn(
+        n_vocab=0,
+        spec_channels=posterior_channels,
+        segment_size=hps['train']['segment_size'] // hps['data']['hop_length'],
+        n_speakers=hps['data']['n_speakers'],
+        **hps['model']
+    ).to(device)
+    net_g.enc_p.emb = torch.nn.Embedding(178, 192)
+
+    _ = net_g.eval()
+    _ = util.load_checkpoint(CHECKPOINT_PATH, net_g, None)
+
+    mel_tensor = mel.to(device).float()  # [1, 80, T]
+    mel_lengths = torch.LongTensor([mel_tensor.shape[2]]).to(device)
+
+    # Speaker embedding
+    if hps['data']['n_speakers'] > 0:
+        sid = torch.LongTensor([SPEAKER_ID]).to(device)
+        g = net_g.emb_g(sid).unsqueeze(-1)
+    else:
+        g = None
+
+    # Synthesis
+    with torch.no_grad():
+        z, _, _, y_mask = net_g.enc_q(mel_tensor, mel_lengths)
+        audio, _, _ = net_g.dec(z * y_mask, g=g)
+        audio = audio.squeeze().cpu()
+
+    return audio
+
+
 
 # === Main  ===
 @hydra.main(config_path="config", config_name="config.yaml")
@@ -135,8 +277,6 @@ def main(cfg: DictConfig):
         mel = infer_matcha(cfg.model, text, device)
     elif cfg.model.type == "tacotron2":
         mel = infer_tacotron2(cfg.model, text, device)
-    elif cfg.model.type == "ringformer":
-        raise NotImplementedError("Ringformer integration must be defined specifically.")
     else:
         raise ValueError(f"Unknown model type: {cfg.model.type}")
 
@@ -147,6 +287,8 @@ def main(cfg: DictConfig):
         audio = vocode_bigvgan(cfg.vocoder, mel, device)
     elif cfg.vocoder.type == "griffinlim":
         audio = vocode_griffinlim(cfg.vocoder, mel)
+    elif cfg.vocoder.type == "ringformer":
+        audio = vocode_ringformer(cfg.vocoder, mel, 0,device)
     else:
         raise ValueError(f"Unknown vocoder type: {cfg.vocoder.type}")
 
