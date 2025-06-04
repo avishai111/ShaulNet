@@ -6,7 +6,7 @@ model:
 vocoder:
   # Options: hifigan, bigvgan, griffinlim, ringformer
   # Default: hifigan
-  type: hifigan
+  type: bigvgan
 
 sampling_rate: 22050
 
@@ -41,4 +41,4 @@ vocoder_ringformer:
 
 inference:
   text: "שָׁלוֹם, מַה נִּשְׁמַע?"
-  output_file: "/gpfs0/bgu-benshimo/users/wavishay/outputs/generated.wav"
+  output_file: "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/outputs/generated.wav"
