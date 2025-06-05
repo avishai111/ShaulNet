@@ -13,6 +13,8 @@ For more details, visit the [official Robo-Shaul website](https://www.roboshaul.
 
 **ShaulNet** is our solution to the [Robo-Shaul Challenge](https://www.roboshaul.com/): a flexible, multilingual Text-to-Speech (TTS) system designed to synthesize natural-sounding Hebrew speech from raw text using a modular and configurable architecture.
 
+Our solution requires the use of fully diacritized text in Hebrew.
+
 This repository integrates and builds upon several outstanding open-source projects, including:
 
 * [Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS)
@@ -38,7 +40,8 @@ This repository integrates and builds upon several outstanding open-source proje
 
 ```bash
 # Run TTS using the config file (choose model/vocoder inside it)
-python inference.py
+python inference.py --text "שלום עולם" --model tacotron2 --vocoder hifigan --checkpoint /gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/checkpoints/matcha_tts/logs/train/ljspeech/runs/2025-06-02_14-11-39/checkpoints/checkpoint_epoch=2679.ckpt   --output-file outputs/generated.wav
+
 ````
 
 Edit the `conf/config.yaml` file to customize the input text, model, vocoder, and output:
@@ -64,9 +67,9 @@ ShaulNet/
 ├── Matcha_TTS/                         # Matcha-TTS model codebase (training, synthesis, utils)
 ├── Plotting/                           # Utility scripts for visualizing mel-spectrograms and alignments
 ├── Preprocess/                         # Data preprocessing pipeline (cleaners, format converters, etc.)
-├── pretrained_models/                  # Folder containing downloaded/pretrained TTS and vocoder models
-├── RingFormer/                         # Optional RingFormer model implementation (if enabled)
-├── tracatron2/                         # Tacotron2 model code (architecture, training, inference)
+├── pretrained_models/                  # Folder containing downloaded/pretrained TTS and vocoder models.
+├── RingFormer/                         # Optional RingFormer model codebase (if neeeded).
+├── tracatron2/                         # Tacotron2 model codebase (architecture, training, inference).
 ├── .gitignore                          # Git ignore rules (e.g., checkpoints, logs, outputs)
 ├── LICENSE                             # Open-source license (e.g., MIT)
 ├── inference.py                        # Main script to perform TTS inference via Hydra-configurable pipeline
