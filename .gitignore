@@ -220,3 +220,4 @@ checkpoints/*
 tacotron2/*.wav
 Matcha_TTS/*.wav
 RingFormer/*.wav
+BigVGAN/*.wav
