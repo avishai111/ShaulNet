@@ -1,6 +1,7 @@
 import torch
 import os
 import sys
+import argparse
 import datetime
 from typing import Union, Dict, List, Optional, Tuple, Any, Callable, Type
 import warnings
@@ -19,13 +20,13 @@ from Data_Creation_scripts.HebrewToEnglish import HebrewToEnglish
 from BigVGAN.bigvgan import BigVGAN
 
 # === Matcha ===
-# from Matcha_TTS.matcha.models.matcha_tts import MatchaTTS
-# from Matcha_TTS.matcha.hifigan.models import Generator as MatchaVocoder
-# from Matcha_TTS.matcha.hifigan.config import v1 as matcha_hifigan_config
-# from Matcha_TTS.matcha.hifigan.denoiser import Denoiser as MatchaDenoiser
-# from Matcha_TTS.matcha.text import text_to_sequence as matcha_text_to_sequence
-# from Matcha_TTS.matcha.text import sequence_to_text as matcha_sequence_to_text
-# from Matcha_TTS.matcha.utils.utils import intersperse
+from Matcha_TTS.matcha.models.matcha_tts import MatchaTTS
+from Matcha_TTS.matcha.hifigan.models import Generator as MatchaVocoder
+from Matcha_TTS.matcha.hifigan.config import v1 as matcha_hifigan_config
+from Matcha_TTS.matcha.hifigan.denoiser import Denoiser as MatchaDenoiser
+from Matcha_TTS.matcha.text import text_to_sequence as matcha_text_to_sequence
+from Matcha_TTS.matcha.text import sequence_to_text as matcha_sequence_to_text
+from Matcha_TTS.matcha.utils.utils import intersperse
 
 # === Tacotron2 ===
 from speechbrain.inference.TTS import Tacotron2 as Tacotron2
@@ -314,13 +315,28 @@ def run_inference(cfg: DictConfig):
 if __name__ == "__main__":
     if "--text" in sys.argv:
         # ==== Classic CLI Mode ====
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--text", type=str, required=True)
-        parser.add_argument("--model", type=str, choices=["tacotron2", "matcha"], required=True , default="matcha")
-        parser.add_argument("--vocoder", type=str, choices=["hifigan", "bigvgan", "griffinlim", "ringformer"], required=True, default="hifigan")
-        parser.add_argument("--output_file", type=str, default="output.wav")
-        parser.add_argument("--checkpoint", type=str, required=True)
-        parser.add_argument("--sampling_rate", type=int, default=22050)
+        parser = argparse.ArgumentParser(
+            description="Inference script for TTS models (Tacotron2 / Matcha) and vocoders (HiFi-GAN, BigVGAN, etc.)",
+            epilog="""Example:
+            python inference.py \\
+                --text "שלום עולם" \\
+                --model tacotron2 \\
+                --vocoder hifigan \\
+                --checkpoint checkpoints/tacotron2.pt \\
+                --output_file outputs/generated.wav
+            """
+        )
+        parser.add_argument("--text", type=str, required=True,help="Input text to synthesize (Hebrew supported via phonetic mapping).")
+
+        parser.add_argument("--model", type=str, choices=["tacotron2", "matcha"], default="matcha", required=True,help="TTS model to use. Options: 'tacotron2', 'matcha'. Default: 'matcha'.")
+
+        parser.add_argument("--vocoder", type=str, choices=["hifigan", "bigvgan", "griffinlim", "ringformer"], default="hifigan", required=True,help="Vocoder to convert mel-spectrogram to waveform. Default: 'hifigan'.")
+
+        parser.add_argument("--checkpoint", type=str, required=True,help="Path to the model/vocoder checkpoint file.")
+
+        parser.add_argument("--output_file", type=str, default="output.wav",help="Path where the synthesized waveform will be saved.")
+
+        parser.add_argument("--sampling_rate", type=int, default=22050,help="Sampling rate for output audio. Default: 22050 Hz.")
         args = parser.parse_args()
 
         # Manually build config from argparse
