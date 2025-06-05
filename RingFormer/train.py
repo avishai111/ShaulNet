@@ -16,21 +16,39 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.cuda.amp import autocast, GradScaler
 import tqdm
 
-import commons
-import utils
-from data_utils import TextAudioLoader, TextAudioCollate, DistributedBucketSampler
-from models import (
-    SynthesizerTrn,
-    MultiPeriodDiscriminator,
-    MultiScaleSubbandCQTDiscriminator,
-    DurationDiscriminatorV1,
-    DurationDiscriminatorV2,
-    AVAILABLE_FLOW_TYPES,
-    AVAILABLE_DURATION_DISCRIMINATOR_TYPES
-)
-from losses import generator_loss, discriminator_loss, feature_loss, kl_loss
-from preprocess.mel_processing import mel_spectrogram_torch, spec_to_mel_torch
-from text.symbols import symbols
+try:
+    import commons
+    import utils
+    from data_utils import TextAudioLoader, TextAudioCollate, DistributedBucketSampler
+    from models import (
+        SynthesizerTrn,
+        MultiPeriodDiscriminator,
+        MultiScaleSubbandCQTDiscriminator,
+        DurationDiscriminatorV1,
+        DurationDiscriminatorV2,
+        AVAILABLE_FLOW_TYPES,
+        AVAILABLE_DURATION_DISCRIMINATOR_TYPES
+    )
+    from losses import generator_loss, discriminator_loss, feature_loss, kl_loss
+    from preprocess.mel_processing import mel_spectrogram_torch, spec_to_mel_torch
+    from text.symbols import symbols
+except ImportError:
+    from . import commons
+    from . import utils
+    from .data_utils import TextAudioLoader, TextAudioCollate, DistributedBucketSampler
+    from .models import (
+        SynthesizerTrn,
+        MultiPeriodDiscriminator,
+        MultiScaleSubbandCQTDiscriminator,
+        DurationDiscriminatorV1,
+        DurationDiscriminatorV2,
+        AVAILABLE_FLOW_TYPES,
+        AVAILABLE_DURATION_DISCRIMINATOR_TYPES
+    )
+    from .losses import generator_loss, discriminator_loss, feature_loss, kl_loss
+    from .preprocess.mel_processing import mel_spectrogram_torch, spec_to_mel_torch
+    from .text.symbols import symbols
+
 
 torch.backends.cudnn.benchmark = True
 global_step = 0

@@ -10,16 +10,28 @@ from torch.nn.utils import remove_weight_norm, spectral_norm, weight_norm
 import torchaudio.transforms as T
 
 import einops
-import attentions
-import commons
-import modules
-import monotonic_align
 
-from stft1 import stft
-from stft1 import TorchSTFT
+try:
+    import RingFormer.attentions as attentions
+    import RingFormer.commons as commons
+    import RingFormer.modules as modules
+    import RingFormer.monotonic_align as monotonic_align
+    from RingFormer.stft1 import stft
+    from RingFormer.stft1 import TorchSTFT
+    from RingFormer.commons import get_padding, init_weights
+    from RingFormer.generator_blocks import *
+except ImportError:
+    import attentions
+    import commons
+    import modules
+    import monotonic_align
+    from stft1 import stft
+    from stft1 import TorchSTFT
+    from commons import get_padding, init_weights
+    from generator_blocks import *
+
+
 from conformer.conformer import Conformer
-from commons import get_padding, init_weights
-from generator_blocks import *
 from einops import rearrange
 from nnAudio import features
 

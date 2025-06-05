@@ -3,9 +3,15 @@ import numpy as np
 import torch
 import torch.utils.data
 
-import layers
-from utils import load_wav_to_torch, load_filepaths_and_text
-from text import text_to_sequence
+try:
+    import layers
+    from utils import load_wav_to_torch, load_filepaths_and_text
+    from text import text_to_sequence
+except ImportError:
+    from . import layers
+    from .utils import load_wav_to_torch, load_filepaths_and_text
+    from .text import text_to_sequence
+
 
 def apply_mel_augmentation(mel: torch.Tensor, hparams) -> torch.Tensor:
     """

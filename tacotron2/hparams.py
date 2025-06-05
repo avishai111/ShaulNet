@@ -1,5 +1,9 @@
 from dataclasses import dataclass
-from text import symbols
+try:
+    from text import symbols
+except ImportError:
+    from .text import symbols
+
 
 @dataclass
 class HParams:

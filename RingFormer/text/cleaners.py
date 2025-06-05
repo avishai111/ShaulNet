@@ -15,8 +15,7 @@ hyperparameter. Some cleaners are English-specific. You'll typically want to use
 import re
 from unidecode import unidecode
 from phonemizer import phonemize
-from phonemizer.backend import EspeakBackend
-backend = EspeakBackend("en-us", preserve_punctuation=True, with_stress=True)
+
 
 
 # Regular expression matching whitespace:
@@ -114,6 +113,8 @@ def english_cleaners2(text):
 
 def english_cleaners3(text):
     """Pipeline for English text, including abbreviation expansion. + punctuation + stress"""
+    from phonemizer.backend import EspeakBackend
+    backend = EspeakBackend("en-us", preserve_punctuation=True, with_stress=True)
     text = convert_to_ascii(text)
     text = lowercase(text)
     text = expand_abbreviations(text)

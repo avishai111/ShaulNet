@@ -6,11 +6,25 @@ import numpy as np
 import torch
 import torch.utils.data
 
-import commons
-from preprocess.mel_processing import (mel_spectrogram_torch, spec_to_mel_torch,
-                            spectrogram_torch)
-from text import cleaned_text_to_sequence, text_to_sequence
-from utils import load_filepaths_and_text, load_wav_to_torch
+try:
+    import commons
+    from preprocess.mel_processing import (
+        mel_spectrogram_torch,
+        spec_to_mel_torch,
+        spectrogram_torch
+    )
+    from text import cleaned_text_to_sequence, text_to_sequence
+    from utils import load_filepaths_and_text, load_wav_to_torch
+except ImportError:
+    from . import commons
+    from .preprocess.mel_processing import (
+        mel_spectrogram_torch,
+        spec_to_mel_torch,
+        spectrogram_torch
+    )
+    from .text import cleaned_text_to_sequence, text_to_sequence
+    from .utils import load_filepaths_and_text, load_wav_to_torch
+
 
 
 class TextAudioLoader(torch.utils.data.Dataset):

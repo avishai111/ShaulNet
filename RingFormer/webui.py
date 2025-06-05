@@ -3,12 +3,21 @@ import gradio as gr
 from gradio import components
 import os
 import torch
-import commons
-import utils
-from models import SynthesizerTrn
-from text.symbols import symbols
-from text import text_to_sequence
 from scipy.io.wavfile import write
+
+try:
+    import commons
+    import utils
+    from models import SynthesizerTrn
+    from text.symbols import symbols
+    from text import text_to_sequence
+except ImportError:
+    from . import commons
+    from . import utils
+    from .models import SynthesizerTrn
+    from .text.symbols import symbols
+    from .text import text_to_sequence
+
 
 def get_text(text, hps):
     text_norm = text_to_sequence(text, hps.data.text_cleaners)

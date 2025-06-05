@@ -1,11 +1,19 @@
 import torch
 import argparse
-import commons
-import utils
-from models import SynthesizerTrn
-from text.symbols import symbols
-from text import text_to_sequence
 from scipy.io.wavfile import write
+
+try:
+    import commons
+    import utils
+    from models import SynthesizerTrn
+    from text.symbols import symbols
+    from text import text_to_sequence
+except ImportError:
+    from . import commons
+    from . import utils
+    from .models import SynthesizerTrn
+    from .text.symbols import symbols
+    from .text import text_to_sequence
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Process input text and output directory path.")

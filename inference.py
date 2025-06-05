@@ -19,18 +19,26 @@ from Data_Creation_scripts.HebrewToEnglish import HebrewToEnglish
 from BigVGAN.bigvgan import BigVGAN
 
 # === Matcha ===
-from Matcha_TTS.matcha.models.matcha_tts import MatchaTTS
-from Matcha_TTS.matcha.hifigan.models import Generator as MatchaVocoder
-from Matcha_TTS.matcha.hifigan.config import v1 as matcha_hifigan_config
-from Matcha_TTS.matcha.hifigan.denoiser import Denoiser as MatchaDenoiser
-from Matcha_TTS.matcha.text import text_to_sequence as matcha_text_to_sequence
-from Matcha_TTS.matcha.text import sequence_to_text as matcha_sequence_to_text
-from Matcha_TTS.matcha.utils.utils import intersperse
+# from Matcha_TTS.matcha.models.matcha_tts import MatchaTTS
+# from Matcha_TTS.matcha.hifigan.models import Generator as MatchaVocoder
+# from Matcha_TTS.matcha.hifigan.config import v1 as matcha_hifigan_config
+# from Matcha_TTS.matcha.hifigan.denoiser import Denoiser as MatchaDenoiser
+# from Matcha_TTS.matcha.text import text_to_sequence as matcha_text_to_sequence
+# from Matcha_TTS.matcha.text import sequence_to_text as matcha_sequence_to_text
+# from Matcha_TTS.matcha.utils.utils import intersperse
 
 # === Tacotron2 ===
 from speechbrain.inference.TTS import Tacotron2 as Tacotron2
 from speechbrain.inference.vocoders import HIFIGAN as SBHifiGAN
-from tracatron2.text import text_to_sequence as tacotron_text_to_sequence
+from tacotron2 import text_to_sequence as tacotron_text_to_sequence
+from tacotron2 import load_model
+from tacotron2 import create_hparams
+
+# === Ringformer ===
+from RingFormer import get_hparams_from_file, load_checkpoint, SynthesizerTrn
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, script_dir)
 
 # === Plotting ===
 def plot_mel(mel: Union[torch.Tensor, 'np.ndarray'], title: str = "Mel-Spectrogram") -> None:
@@ -100,12 +108,6 @@ def infer_matcha(model_cfg: Dict,text: Union[str, torch.Tensor],device: torch.de
             - 'x_lengths' (torch.Tensor): Sequence length tensor.
             - 'x_phones' (str): Readable phoneme string of the input.
     """
-    ## Number of ODE Solver steps
-    n_timesteps = 10
-    ## Changes to the speaking rate
-    length_scale = 1
-    ## Sampling temperature
-    temperature = 0.1
     # Load the model
     checkpoint_path = os.path.join(model_cfg.savedir,model_cfg.checkpoint)
     model = MatchaTTS.load_from_checkpoint(checkpoint_path, map_location=device).eval().to(device)
@@ -114,10 +116,10 @@ def infer_matcha(model_cfg: Dict,text: Union[str, torch.Tensor],device: torch.de
     output = model.synthesise(
         text_processed['x'], 
         text_processed['x_lengths'],
-        n_timesteps=n_timesteps,
-        temperature=temperature,
-        spks=None,
-        length_scale=length_scale
+        n_timesteps=model_cfg.n_timesteps,
+        temperature=model_cfg.temperature,
+        spks=model_cfg.spks,
+        length_scale=model_cfg.length_scale
     )
     # merge everything to one dict    
     output.update({'start_t': start_t, **text_processed})
@@ -125,23 +127,31 @@ def infer_matcha(model_cfg: Dict,text: Union[str, torch.Tensor],device: torch.de
 
 # === Tacotron2 model inference ===
 @torch.inference_mode()
-def infer_tacotron2(model_cfg: Dict, text: Union[str, torch.Tensor], device: torch.device) -> torch.Tensor:
+def infer_tacotron2(cfg: Dict, text: Union[str, torch.Tensor], device: torch.device) -> torch.Tensor:
     """
     Runs inference using a Tacotron2 model to generate a mel-spectrogram from input text.
 
     Args:
-        model_cfg (Dict): Dictionary containing model configuration. Must include a 'checkpoint' path.
+        cfg (Dict): Dictionary containing the configuration.
         text (Union[str, torch.Tensor]): Input text as a string or pre-tokenized tensor.
         device (torch.device): The device to run inference on (e.g., torch.device("cuda")).
 
     Returns:
         torch.Tensor: The generated mel-spectrogram tensor.
     """
-    model = Tacotron2.from_hparams(source=model_cfg.source, savedir=model_cfg.savedir,
-                                   run_opts={"device": device})
-    seq = model.encode_text(text)
-    mel = model(seq).squeeze(0).permute(1, 0)  # [T, 80] → [80, T]
-    return mel
+    hparams = create_hparams()
+    model_cfg = cfg.model_tacotron2
+    hparams.sampling_rate = cfg.sampling_rate
+    model = load_model(hparams)
+    checkpoint_path = os.path.join(model_cfg.savedir, model_cfg.checkpoint)
+    model.load_state_dict(torch.load(checkpoint_path)['state_dict'], strict=False)
+    model.eval()
+    model = model.to(device)
+    sequence = np.array(tacotron_text_to_sequence(text, ['basic_cleaners']))[None, :]  
+    sequence = torch.autograd.Variable(torch.from_numpy(sequence)) 
+    sequence = sequence.to(device).long()
+    mel_outputs, mel_outputs_postnet, _, alignments = model.inference(sequence)
+    return mel_outputs_postnet
 
 # === Vocoder inference ===
 @torch.inference_mode()
@@ -197,10 +207,7 @@ def vocode_griffinlim(cfg: Dict,mel: torch.Tensor) -> torch.Tensor:
     Converts a mel-spectrogram to waveform using the Griffin-Lim algorithm.
 
     Args:
-        vocoder_cfg (Dict): Configuration dictionary with:
-            - 'sampling_rate': Sampling rate of the audio.
-            - 'hop_length': Hop length for STFT.
-            - 'win_length': Window length for STFT.
+        cfg (Dict): Configuration dictionary.
         mel (torch.Tensor): Mel-spectrogram of shape (n_mels, time).
 
     Returns:
@@ -226,7 +233,7 @@ def vocode_ringformer(vocoder_cfg: Dict, mel: torch.Tensor, SPEAKER_ID: int, dev
         torch.Tensor: Generated waveform as a 1D tensor.
     """
     config_path = os.path.join(vocoder_cfg['savedir'], vocoder_cfg['config'])
-    hps = utils.get_hparams_from_file(config_path)
+    hps = get_hparams_from_file(config_path)
     CHECKPOINT_PATH = os.path.join(vocoder_cfg['savedir'], vocoder_cfg['checkpoint_path'])
 
     if hps['model']['use_mel_posterior_encoder']:
@@ -249,20 +256,17 @@ def vocode_ringformer(vocoder_cfg: Dict, mel: torch.Tensor, SPEAKER_ID: int, dev
     net_g.enc_p.emb = torch.nn.Embedding(178, 192)
 
     _ = net_g.eval()
-    _ = util.load_checkpoint(CHECKPOINT_PATH, net_g, None)
+    _ = load_checkpoint(CHECKPOINT_PATH, net_g, None)
 
     mel_tensor = mel.to(device).float()  # [1, 80, T]
     mel_lengths = torch.LongTensor([mel_tensor.shape[2]]).to(device)
 
     # Speaker embedding
-    if hps['data']['n_speakers'] > 0:
-        sid = torch.LongTensor([SPEAKER_ID]).to(device)
-        g = net_g.emb_g(sid).unsqueeze(-1)
-    else:
-        g = None
+    g = None
 
     # Synthesis
     with torch.no_grad():
+        net_g.eval()
         z, _, _, y_mask = net_g.enc_q(mel_tensor, mel_lengths)
         audio, _, _ = net_g.dec(z * y_mask, g=g)
         audio = audio.squeeze().cpu()
@@ -271,9 +275,8 @@ def vocode_ringformer(vocoder_cfg: Dict, mel: torch.Tensor, SPEAKER_ID: int, dev
 
 
 
-# === Main  ===
-@hydra.main(config_path="config", config_name="config.yaml")
-def main(cfg: DictConfig):
+# === Unified Runner ===
+def run_inference(cfg: DictConfig):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Using config:\n", OmegaConf.to_yaml(cfg))
     text = cfg.inference.text
@@ -282,10 +285,11 @@ def main(cfg: DictConfig):
     model_type = None
     # Model inference
     if cfg.model.type == "matcha":
-        output = infer_matcha(cfg.model_matcha, text, device)
-        mel = output['mel']  # Extract mel-spectrogram from the output
+        pass
+ #       output = infer_matcha(cfg.model_matcha, text, device)
+ #       mel = output['mel']  # Extract mel-spectrogram from the output
     elif cfg.model.type == "tacotron2":
-        mel = infer_tacotron2(cfg.model_tacotron2, text, device)
+        mel = infer_tacotron2(cfg, text, device)
     else:
         raise ValueError(f"Unknown model type: {cfg.model}")
 
@@ -308,4 +312,61 @@ def main(cfg: DictConfig):
     print(f"Saved to {output_file}")
 
 if __name__ == "__main__":
-    main()
+    if "--text" in sys.argv:
+        # ==== Classic CLI Mode ====
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--text", type=str, required=True)
+        parser.add_argument("--model", type=str, choices=["tacotron2", "matcha"], required=True , default="matcha")
+        parser.add_argument("--vocoder", type=str, choices=["hifigan", "bigvgan", "griffinlim", "ringformer"], required=True, default="hifigan")
+        parser.add_argument("--output_file", type=str, default="output.wav")
+        parser.add_argument("--checkpoint", type=str, required=True)
+        parser.add_argument("--sampling_rate", type=int, default=22050)
+        args = parser.parse_args()
+
+        # Manually build config from argparse
+        cfg = OmegaConf.create({
+            "inference": {
+                "text": args.text,
+                "output_file": args.output_file
+            },
+            "model": {
+                "type": args.model
+            },
+            "vocoder": {
+                "type": args.vocoder
+            },
+            "sampling_rate": args.sampling_rate,
+            # Set up basic checkpointing config so inference works
+            "model_tacotron2": {
+                "savedir": os.path.dirname(args.checkpoint),
+                "checkpoint": os.path.basename(args.checkpoint)
+            },
+            "vocoder_hifigan": {
+                "source": None,
+                "savedir": os.path.dirname(args.checkpoint),
+                "checkpoint": os.path.basename(args.checkpoint)
+            },
+            "vocoder_bigvgan": {
+                "savedir": os.path.dirname(args.checkpoint),
+                "checkpoint": os.path.basename(args.checkpoint)
+            },
+            "vocoder_ringformer": {
+                "savedir": os.path.dirname(args.checkpoint),
+                "checkpoint_path": os.path.basename(args.checkpoint),
+                "config": "config.json"  # or .yaml depending on your setup
+            },
+            "vocoder_griffinlim": {
+                "n_fft": 1024,
+                "hop_length": 256,
+                "win_length": 1024
+            }
+        })
+
+        run_inference(cfg)
+
+    else:
+        # ==== Hydra config mode ====
+        @hydra.main(config_path="config", config_name="config.yaml")
+        def hydra_main(cfg: DictConfig):
+            run_inference(cfg)
+        hydra_main()

@@ -6,9 +6,15 @@ from torch import nn
 from torch.nn import functional as F
 from torch.nn.utils import remove_weight_norm, weight_norm
 
-import commons
-import modules
-from modules import LayerNorm
+try:
+    import RingFormer.commons
+    import RingFormer.modules
+    from RingFormer.modules import LayerNorm
+except ImportError:
+    import commons
+    import modules
+    from modules import LayerNorm
+
 
 
 class Encoder(nn.Module):  # backward compatible vits2 encoder

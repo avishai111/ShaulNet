@@ -1,22 +1,30 @@
 model:
-  # Options: matcha, tracatron2, 
+  # Options: matcha, tacotron2, 
   # Default: matcha
   type: matcha
 
 vocoder:
   # Options: hifigan, bigvgan, griffinlim, ringformer
   # Default: hifigan
-  type: bigvgan
+  type: hifigan
 
 sampling_rate: 22050
 
 model_matcha:
   savedir: "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/checkpoints/matcha_tts/"
   checkpoint: "logs/train/ljspeech/runs/2025-06-02_14-11-39/checkpoints/checkpoint_epoch=2679.ckpt"
+  ## Number of ODE Solver steps
+  n_timesteps: 10
+  ## Changes to the speaking rate
+  length_scale: 1
+  ## Sampling temperature
+  temperature: 0.1
+  # Spks
+  spks: None
   
-model_tracatron2: 
-  source: "speechbrain/tts-tacotron2-ljspeech"
-  savedir: "pretrained/tacotron2"
+model_tacotron2: 
+  checkpoint: "output_dir/checkpoint_5000"
+  savedir:  "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/checkpoints/tracatron2/"
 
 vocoder_hifigan:
   checkpoint: "generator.ckpt"
@@ -32,7 +40,7 @@ vocoder_griffinlim:
   n_fft: 1024
   win_length: 1024
   hop_length: 256
-  n_mels: 80
+  n_iter: 100
 
 vocoder_ringformer:
   config: "vits2_ljs_ring.json"
