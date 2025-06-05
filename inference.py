@@ -315,11 +315,11 @@ if __name__ == "__main__":
         parser = argparse.ArgumentParser(
             description="Inference script for TTS models (Tacotron2 / Matcha) and vocoders (HiFi-GAN, BigVGAN, etc.)",
             epilog="""Example:
-            python inference.py \\
-                --text "שלום עולם" \\
-                --model tacotron2 \\
-                --vocoder hifigan \\
-                --checkpoint /gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/checkpoints/matcha_tts/logs/train/ljspeech/runs/2025-06-02_14-11-39/checkpoints/checkpoint_epoch=2679.ckpt \\
+            python inference.py 
+                --text "הַי, אַתֶּם עַל חַיּוֹת כִּיס, אֲנִי שָׁאוּל אַמְסְטֶרְדָּמְסְקִי. אַתֶּם הֶאֱזַנְתֶּם לְחַיּוֹת כִּיס, הַפּוֹדְקַאסְט הַכַּלְכָּלִי שֶׁל כַּאן. עוֹרֵךְ חַיּוֹת כִּיס הוּא תּוֹמֶר מִיכַלְזוֹן. בְּמַעֲרֶכֶת חַיּוֹת כִּיס תִּמְצְאוּ גַּם אֶת צְלִיל אַבְרָהָם." 
+                --model matcha 
+                --vocoder hifigan 
+                --checkpoint /gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/checkpoints/matcha_tts/logs/train/ljspeech/runs/2025-06-02_14-11-39/checkpoints/checkpoint_epoch=2679.ckpt 
                 --output-file outputs/generated.wav
             """
         )

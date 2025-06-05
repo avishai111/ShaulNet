@@ -178,7 +178,6 @@ cython_debug/
 *.jsonl.gz
 *.jsonl
 *.json
-*.wav
 *.h5
 *.ckpt
 *.k2symbols
@@ -216,3 +215,8 @@ output_dir/
 data/*
 pretrained_models/*
 checkpoints/*
+
+#wav files
+tacotron2/*.wav
+Matcha_TTS/*.wav
+RingFormer/*.wav
