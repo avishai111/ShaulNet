@@ -156,7 +156,7 @@ def infer_tacotron2(cfg: Dict, text: Union[str, torch.Tensor], device: torch.dev
 
 # === Vocoder inference ===
 @torch.inference_mode()
-def vocode_hifigan(vocoder_cfg: Dict, mel: torch.Tensor,model_type: str ,device: torch.device) -> torch.Tensor:
+def vocode_hifigan(vocoder_cfg: Dict, mel: torch.Tensor, device: torch.device) -> torch.Tensor:
     """
     Synthesizes waveform from a mel-spectrogram using a pretrained HiFi-GAN vocoder.
 
@@ -281,14 +281,11 @@ def run_inference(cfg: DictConfig):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Using config:\n", OmegaConf.to_yaml(cfg))
     text = cfg.inference.text
-    
     text = HebrewToEnglish(text)  # Convert Hebrew text to English sounds
-    model_type = None
     # Model inference
     if cfg.model.type == "matcha":
-        pass
- #       output = infer_matcha(cfg.model_matcha, text, device)
- #       mel = output['mel']  # Extract mel-spectrogram from the output
+        output = infer_matcha(cfg.model_matcha, text, device)
+        mel = output['mel']  # Extract mel-spectrogram from the output
     elif cfg.model.type == "tacotron2":
         mel = infer_tacotron2(cfg, text, device)
     else:
@@ -322,8 +319,8 @@ if __name__ == "__main__":
                 --text "שלום עולם" \\
                 --model tacotron2 \\
                 --vocoder hifigan \\
-                --checkpoint checkpoints/tacotron2.pt \\
-                --output_file outputs/generated.wav
+                --checkpoint /gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/checkpoints/matcha_tts/logs/train/ljspeech/runs/2025-06-02_14-11-39/checkpoints/checkpoint_epoch=2679.ckpt \\
+                --output-file outputs/generated.wav
             """
         )
         parser.add_argument("--text", type=str, required=True,help="Input text to synthesize (Hebrew supported via phonetic mapping).")
