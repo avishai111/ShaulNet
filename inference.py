@@ -319,9 +319,9 @@ if __name__ == "__main__":
     parser.add_argument("--config", type=str, help="Path to YAML config file to load.")
     # Optional overrides if not using --config
     
-    parser.add_argument("--text", type=str, help="Input text to synthesize (Hebrew supported via phonetic mapping).", default =  "הַי, אַתֶּם עַל חַיּוֹת כִּיס, אֲנִי שָׁאוּל אַמְסְטֶרְדָּמְסְקִי. אַתֶּם הֶאֱזַנְתֶּם לְחַיּוֹת כִּיס, הַפּוֹדְקַאסְט הַכַּלְכָּלִי שֶׁל כַּאן. עוֹרֵךְ חַיּוֹת כִּיס הוּא תּוֹמֶר מִיכַלְזוֹן. בְּמַעֲרֶכֶת חַיּוֹת כִּיס תִּמְצְאוּ גַּם אֶת צְלִיל אַבְרָהָם.")
+    parser.add_argument("--text", type=str, help="Input text to synthesize (Hebrew supported via phonetic mapping).", default =  "בְּרוּכִים הַבָּאִים לְגִיט שֶׁל שָׁאוּל נֵט.")
 
-    parser.add_argument("--model", type=str, choices=["tacotron2", "matcha"], default="tacotron2", help="TTS model to use. Options: 'tacotron2', 'matcha'. Default: 'matcha'.")
+    parser.add_argument("--model", type=str, choices=["tacotron2", "matcha"], default="matcha", help="TTS model to use. Options: 'tacotron2', 'matcha'. Default: 'matcha'.")
 
     parser.add_argument("--vocoder", type=str, choices=["hifigan", "bigvgan", "griffinlim", "ringformer"], default="hifigan",help="Vocoder to convert mel-spectrogram to waveform. Default: 'hifigan'.")
 
