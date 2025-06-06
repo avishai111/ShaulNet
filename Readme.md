@@ -1,5 +1,6 @@
 # 🤖 ShaulNet - Robo-Shaul-TTS
----
+
+[![DOI](https://zenodo.org/badge/993479487.svg)](https://doi.org/10.5281/zenodo.15609915)
 
 ## About the Robo-Shaul Challenge
 
@@ -9,7 +10,7 @@ As part of the challenge, a Hebrew single-speaker dataset named **SASPEECH** was
 
 For more details, visit the [official Robo-Shaul website](https://www.roboshaul.com/).
 
----
+## ShaulNet
 
 **ShaulNet** is our solution to the [Robo-Shaul Challenge](https://www.roboshaul.com/): a flexible, multilingual Text-to-Speech (TTS) system designed to synthesize natural-sounding Hebrew speech from raw text using a modular and configurable architecture.
 
@@ -25,7 +26,6 @@ This repository integrates and builds upon several outstanding open-source proje
 * [Griffin-Lim](https://pytorch.org/audio/main/generated/torchaudio.transforms.GriffinLim.html)
 * [WaveGlow](https://pytorch.org/hub/nvidia_deeplearningexamples_waveglow/)
 
----
 
 ## 🚀 Features
 
@@ -34,7 +34,6 @@ This repository integrates and builds upon several outstanding open-source proje
 * 🧠 Built on state-of-the-art models and vocoders
 * 🧪 Modular architecture for research, experimentation, and production
 
----
 
 ## 🔊 Audio Sample
 
@@ -45,8 +44,6 @@ https://github.com/user-attachments/assets/99595ed7-a8d6-4a11-8606-781766a3ee03
 
 https://github.com/user-attachments/assets/dd5da098-66af-482c-96b8-30ac3a339a53
 
-
----
 
 ## 📝 Basic Usage
 
@@ -63,8 +60,6 @@ inference:
   text: "מה קורה, שאול?"
   output_path: "outputs/shaul.wav"
 ```
-
----
 
 ## 🛠️ Project Structure
 
@@ -88,14 +83,12 @@ ShaulNet/
 └── README.md                           # This file
 ```
 
----
 
 ## 🙏 Acknowledgments
 
 * This project is based in part on the **English-to-Hebrew preprocessing** logic from [maxmelichov/Text-To-speech](https://github.com/maxmelichov/Text-To-speech).
 * We would like to thank the developers and researchers of all the referenced projects above for their open-source contributions to the speech synthesis community.
 
----
 
 ## 📜 License
 
