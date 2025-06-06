@@ -93,9 +93,6 @@ ShaulNet/
 * [ ] Add more audio samples to the README.
 * [ ] Improve support for undiacritized Hebrew text.
 * [ ] Add automatic validation using WER metric based on Whisper model.
-* [ ] 
-
-
 
 
 ## 🙏 Acknowledgments
