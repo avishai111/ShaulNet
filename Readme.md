@@ -49,7 +49,7 @@ https://github.com/user-attachments/assets/dd5da098-66af-482c-96b8-30ac3a339a53
 
 ```bash
 # Run TTS using the config file (choose model/vocoder inside it)
-python inference.py --text "שָׁלוֹם עוֹלָם" --model matcha --vocoder hifigan --checkpoint /gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/checkpoints/matcha_tts/logs/train/ljspeech/runs/2025-06-02_14-11-39/checkpoints/checkpoint_epoch=2679.ckpt   --output-file outputs/generated.wav
+python inference.py --text "שָׁלוֹם עוֹלָם" --model matcha --vocoder hifigan --checkpoint checkpoints/matcha_tts/logs/train/ljspeech/runs/2025-06-02_14-11-39/checkpoints/checkpoint_epoch=2679.ckpt   --output-file outputs/generated.wav
 
 ````
 
@@ -82,6 +82,20 @@ ShaulNet/
 ├── inference.py                        # Main script to perform TTS inference via Hydra-configurable pipeline
 └── README.md                           # This file
 ```
+
+## ✅ TODO
+
+* [x] Upload the project code to GitHub.
+* [x] Write basic documentation in the README.
+* [x] Integrate automated testing and CI pipelines.
+* [ ] Add a checkpoint files.
+* [ ] Add the dataset files after the preprocess.
+* [ ] Add more audio samples to the README.
+* [ ] Improve support for undiacritized Hebrew text.
+* [ ] Add automatic validation using WER metric based on Whisper model.
+* [ ] 
+
+
 
 
 ## 🙏 Acknowledgments
