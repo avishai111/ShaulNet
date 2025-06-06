@@ -94,18 +94,15 @@ ShaulNet/
 * [ ] Improve support for undiacritized Hebrew text.
 * [ ] Add automatic validation using WER metric based on Whisper model.
 
-
 ## 🙏 Acknowledgments
 
 * This project is based in part on the **English-to-Hebrew preprocessing** logic from [maxmelichov/Text-To-speech](https://github.com/maxmelichov/Text-To-speech).
 * We would like to thank the developers and researchers of all the referenced projects above for their open-source contributions to the speech synthesis community.
 
-
 ## 📜 License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
----
 
 ## 📬 Contact
 
@@ -115,6 +112,6 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 
 [![GitHub](https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white)](https://github.com/avishai111)
 
----
+
 
 
