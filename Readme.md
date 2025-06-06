@@ -102,7 +102,7 @@ For questions, issues, or collaboration ideas:
 
 📧 [Avishai Weizman](mailto:Avishai11900@gmail.com)
 
-🔗 [LinkedIn](https://www.linkedin.com/in/avishai-weizman/)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-blue?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/avishai-weizman/)
 
 🐙 [GitHub](https://github.com/avishai111)
 
