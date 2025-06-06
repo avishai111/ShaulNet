@@ -1,0 +1,35 @@
+model:
+  type: matcha
+vocoder:
+  type: hifigan
+sampling_rate: 22050
+model_matcha:
+  savedir: /gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/checkpoints/matcha_tts/
+  checkpoint: logs/train/ljspeech/runs/2025-06-02_14-11-39/checkpoints/checkpoint_epoch=2679.ckpt
+  n_timesteps: 10
+  length_scale: 1
+  temperature: 0.1
+  spks: None
+model_tacotron2:
+  checkpoint: output_dir/checkpoint_5000
+  savedir: /gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/checkpoints/tracatron2/
+vocoder_hifigan:
+  checkpoint: generator.ckpt
+  savedir: /gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/pretrained_models/hifigan_pretrained/
+  source: speechbrain/tts-hifigan-ljspeech
+  denoise_strength: 0.01
+vocoder_bigvgan:
+  checkpoint: nvidia/bigvgan_v2_22khz_80band_fmax8k_256x
+  savedir: /gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/pretrained_models/bigvgan_pretrained/
+vocoder_griffinlim:
+  n_fft: 1024
+  win_length: 1024
+  hop_length: 256
+  n_iter: 100
+vocoder_ringformer:
+  config: vits2_ljs_ring.json
+  checkpoint_path: G_350000.pth
+  savedir: /gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/pretrained_models/RingFormer_pretrained/
+inference:
+  text: שָׁלוֹם, מַה נִּשְׁמַע?
+  output_file: /gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/outputs/generated.wav

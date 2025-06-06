@@ -309,77 +309,115 @@ def run_inference(cfg: DictConfig):
     sf.write(output_file, audio.cpu().numpy(), cfg.sampling_rate)
     print(f"Saved to {output_file}")
 
+# === Main entry point ===
 if __name__ == "__main__":
-    if "--text" in sys.argv:
-        # ==== Classic CLI Mode ====
-        parser = argparse.ArgumentParser(
-            description="Inference script for TTS models (Tacotron2 / Matcha) and vocoders (HiFi-GAN, BigVGAN, etc.)",
-            epilog="""Example:
-            python inference.py 
-                --text "הַי, אַתֶּם עַל חַיּוֹת כִּיס, אֲנִי שָׁאוּל אַמְסְטֶרְדָּמְסְקִי. אַתֶּם הֶאֱזַנְתֶּם לְחַיּוֹת כִּיס, הַפּוֹדְקַאסְט הַכַּלְכָּלִי שֶׁל כַּאן. עוֹרֵךְ חַיּוֹת כִּיס הוּא תּוֹמֶר מִיכַלְזוֹן. בְּמַעֲרֶכֶת חַיּוֹת כִּיס תִּמְצְאוּ גַּם אֶת צְלִיל אַבְרָהָם." 
-                --model matcha 
-                --vocoder hifigan 
-                --checkpoint /gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/checkpoints/matcha_tts/logs/train/ljspeech/runs/2025-06-02_14-11-39/checkpoints/checkpoint_epoch=2679.ckpt 
-                --output-file outputs/generated.wav
-            """
-        )
-        parser.add_argument("--text", type=str, required=True,help="Input text to synthesize (Hebrew supported via phonetic mapping).")
+    parser = argparse.ArgumentParser(
+        description="Inference script for TTS models (Tacotron2 / Matcha) and vocoders (HiFi-GAN, BigVGAN, etc.)",
+        epilog="Example: python inference.py --config config/config.yaml"
+    )
 
-        parser.add_argument("--model", type=str, choices=["tacotron2", "matcha"], default="matcha", required=True,help="TTS model to use. Options: 'tacotron2', 'matcha'. Default: 'matcha'.")
+    parser.add_argument("--config", type=str, help="Path to YAML config file to load.")
+    # Optional overrides if not using --config
+    
+    parser.add_argument("--text", type=str, help="Input text to synthesize (Hebrew supported via phonetic mapping).", default =  "הַי, אַתֶּם עַל חַיּוֹת כִּיס, אֲנִי שָׁאוּל אַמְסְטֶרְדָּמְסְקִי. אַתֶּם הֶאֱזַנְתֶּם לְחַיּוֹת כִּיס, הַפּוֹדְקַאסְט הַכַּלְכָּלִי שֶׁל כַּאן. עוֹרֵךְ חַיּוֹת כִּיס הוּא תּוֹמֶר מִיכַלְזוֹן. בְּמַעֲרֶכֶת חַיּוֹת כִּיס תִּמְצְאוּ גַּם אֶת צְלִיל אַבְרָהָם.")
 
-        parser.add_argument("--vocoder", type=str, choices=["hifigan", "bigvgan", "griffinlim", "ringformer"], default="hifigan", required=True,help="Vocoder to convert mel-spectrogram to waveform. Default: 'hifigan'.")
+    parser.add_argument("--model", type=str, choices=["tacotron2", "matcha"], default="tacotron2", help="TTS model to use. Options: 'tacotron2', 'matcha'. Default: 'matcha'.")
 
-        parser.add_argument("--checkpoint", type=str, required=True,help="Path to the model/vocoder checkpoint file.")
+    parser.add_argument("--vocoder", type=str, choices=["hifigan", "bigvgan", "griffinlim", "ringformer"], default="hifigan",help="Vocoder to convert mel-spectrogram to waveform. Default: 'hifigan'.")
 
-        parser.add_argument("--output_file", type=str, default="output.wav",help="Path where the synthesized waveform will be saved.")
+    parser.add_argument("--checkpoint", type=str, help="Path to the model/vocoder checkpoint file.", default= "/gpfs0/bgu-benshimo/users/wavishay/VallE-Heb/TTS2/Pytorch/checkpoints/matcha_tts/logs/train/ljspeech/runs/2025-06-02_14-11-39/checkpoints/checkpoint_epoch=2679.ckpt")
 
-        parser.add_argument("--sampling_rate", type=int, default=22050,help="Sampling rate for output audio. Default: 22050 Hz.")
-        args = parser.parse_args()
+    parser.add_argument("--output_file", type=str, default="outputs/generated.wav",help="Path where the synthesized waveform will be saved.")
 
-        # Manually build config from argparse
+    parser.add_argument("--sampling_rate", type=int, default=22050,help="Sampling rate for output audio. Default: 22050 Hz.")
+        
+    args = parser.parse_args()
+
+    if args.config:
+        # ==== Load config from YAML ====
+        cfg = OmegaConf.load(args.config)
+        
+        # Apply overrides from CLI if provided
+        if args.text:
+            cfg.inference.text = args.text
+        if args.model:
+            cfg.model.type = args.model
+        if args.vocoder:
+            cfg.vocoder.type = args.vocoder
+        if args.output_file:
+            cfg.inference.output_file = args.output_file
+        if args.checkpoint:
+            checkpoint_dir = os.path.dirname(args.checkpoint)
+            checkpoint_file = os.path.basename(args.checkpoint)
+
+            # Apply to both model_matcha and vocoders
+            if cfg.model.type == "matcha":
+                cfg.model_matcha.checkpoint = checkpoint_file
+                cfg.model_matcha.savedir = checkpoint_dir
+            if cfg.model.type == "tacotron2":
+                cfg.model_tacotron2.checkpoint = checkpoint_file
+                cfg.model_tacotron2.savedir = checkpoint_dir
+
+            # Apply to vocoders that might use checkpoint
+            for voc_key in ["vocoder_hifigan", "vocoder_bigvgan", "vocoder_ringformer"]:
+                if voc_key in cfg:
+                    if "checkpoint" in cfg[voc_key]:
+                        cfg[voc_key].checkpoint = checkpoint_file
+                    if "checkpoint_path" in cfg[voc_key]:
+                        cfg[voc_key].checkpoint_path = checkpoint_file
+                    cfg[voc_key].savedir = checkpoint_dir
+
+        if args.sampling_rate:
+            cfg.sampling_rate = args.sampling_rate
+
+    else:
+        # ==== No YAML config; fall back to default inline config ====
         cfg = OmegaConf.create({
             "inference": {
                 "text": args.text,
-                "output_file": args.output_file
+                "output_file": args.output_file or "outputs/generated.wav"
             },
             "model": {
-                "type": args.model
+                "type": args.model or "matcha"
             },
             "vocoder": {
-                "type": args.vocoder
+                "type": args.vocoder or "hifigan"
             },
-            "sampling_rate": args.sampling_rate,
-            # Set up basic checkpointing config so inference works
+            "sampling_rate": args.sampling_rate or 22050,
             "model_tacotron2": {
-                "savedir": os.path.dirname(args.checkpoint),
-                "checkpoint": os.path.basename(args.checkpoint)
+                "checkpoint": os.path.basename(args.checkpoint),
+                "savedir": os.path.dirname(args.checkpoint)
             },
             "vocoder_hifigan": {
-                "source": None,
-                "savedir": os.path.dirname(args.checkpoint),
-                "checkpoint": os.path.basename(args.checkpoint)
+                "source": "speechbrain/tts-hifigan-ljspeech",
+                "checkpoint": os.path.basename(args.checkpoint),
+                "savedir": os.path.dirname(args.checkpoint)
             },
             "vocoder_bigvgan": {
-                "savedir": os.path.dirname(args.checkpoint),
-                "checkpoint": os.path.basename(args.checkpoint)
+                "checkpoint": os.path.basename(args.checkpoint),
+                "savedir": os.path.dirname(args.checkpoint)
             },
             "vocoder_ringformer": {
-                "savedir": os.path.dirname(args.checkpoint),
+                "config": "vits2_ljs_ring.json",
                 "checkpoint_path": os.path.basename(args.checkpoint),
-                "config": "config.json"  # or .yaml depending on your setup
+                "savedir": os.path.dirname(args.checkpoint)
             },
             "vocoder_griffinlim": {
                 "n_fft": 1024,
                 "hop_length": 256,
-                "win_length": 1024
+                "win_length": 1024,
+                "n_iter": 100
+            },
+            "model_matcha": {
+                "savedir": os.path.dirname(args.checkpoint),
+                "checkpoint": os.path.basename(args.checkpoint),
+                "n_timesteps": 10,
+                "length_scale": 1,
+                "temperature": 0.1,
+                "spks": None
             }
         })
 
-        run_inference(cfg)
-
-    else:
-        # ==== Hydra config mode ====
-        @hydra.main(config_path="config", config_name="config.yaml")
-        def hydra_main(cfg: DictConfig):
-            run_inference(cfg)
-        hydra_main()
+    # Run inference with final config
+    run_inference(cfg)
+    print("Inference completed successfully.")
