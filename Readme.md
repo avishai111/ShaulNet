@@ -89,7 +89,7 @@ ShaulNet/
 * [x] Upload the project code to GitHub.
 * [x] Write basic documentation in the README.
 * [x] Integrate automated testing and CI pipelines.
-* [ ] Add MOS evaluation using Distill-MOS.
+* [x] Add MOS evaluation using Distill-MOS.
 * [ ] Add a checkpoint files.
 * [ ] Add the dataset files after the preprocess.
 * [ ] Add more audio samples to the README.
