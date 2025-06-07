@@ -25,6 +25,7 @@ This repository integrates and builds upon several outstanding open-source proje
 * [BigVGAN](https://github.com/NVIDIA/BigVGAN)
 * [Griffin-Lim](https://pytorch.org/audio/main/generated/torchaudio.transforms.GriffinLim.html)
 * [WaveGlow](https://pytorch.org/hub/nvidia_deeplearningexamples_waveglow/)
+* [Distill-MOS](https://github.com/microsoft/Distill-MOS?tab=readme-ov-file)
 
 
 ## 🚀 Features
@@ -88,6 +89,7 @@ ShaulNet/
 * [x] Upload the project code to GitHub.
 * [x] Write basic documentation in the README.
 * [x] Integrate automated testing and CI pipelines.
+* [ ] Add MOS evaluation using Distill-MOS.
 * [ ] Add a checkpoint files.
 * [ ] Add the dataset files after the preprocess.
 * [ ] Add more audio samples to the README.
